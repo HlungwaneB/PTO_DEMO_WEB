@@ -1,0 +1,23 @@
+@* Screen 04 - Administrator / officer log in. *@
+@model LoginViewModel
+@{ ViewData["Title"] = "Administrator log in"; ViewData["Mode"] = "auth"; }
+<section class="auth-card">
+    <svg class="bars" viewBox="0 0 28 36" aria-hidden="true"><rect x="0" y="14" width="7" height="22" rx="3" fill="#F26B21"/><rect x="10" y="0" width="7" height="36" rx="3" fill="#111"/><rect x="20" y="8" width="7" height="28" rx="3" fill="#7A9A0E"/></svg>
+    <h1>Admin log in</h1>
+    <form asp-action="AdminLogin" method="post" data-once>
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+        <div class="af">
+            <label asp-for="Identifier">E-mail address</label>
+            <input asp-for="Identifier" type="email" autocomplete="username" />
+            <span asp-validation-for="Identifier" class="field-error"></span>
+        </div>
+        <div class="af">
+            <label asp-for="Password">Password</label>
+            <input asp-for="Password" autocomplete="current-password" />
+            <span asp-validation-for="Password" class="field-error"></span>
+        </div>
+        <a class="forgot" asp-controller="Home" asp-action="Contact">Forgot Password</a>
+        <button type="submit" class="login-btn">LOG IN</button>
+    </form>
+    <p class="alt">Not an administrator. <a asp-action="Login">Go to user log in</a></p>
+</section>

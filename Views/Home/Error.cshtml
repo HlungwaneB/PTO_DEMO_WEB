@@ -1,0 +1,13 @@
+@model ErrorViewModel
+@{ ViewData["Title"] = "Error"; }
+<section class="panel narrow">
+    <div class="panel-head">Something went wrong</div>
+    <div class="panel-body center">
+        <p>An unexpected error happened. Please try again.</p>
+        @if (!string.IsNullOrEmpty(Model?.RequestId))
+        {
+            <p class="muted small">Request ID: <code>@Model.RequestId</code></p>
+        }
+        <a class="btn" asp-controller="Home" asp-action="Index">Go to home</a>
+    </div>
+</section>

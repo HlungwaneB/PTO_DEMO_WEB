@@ -1,0 +1,194 @@
+@* Master page. Four looks, chosen by ViewData["Mode"] (see the Figma screens):
+   "welcome" = logo + P.T.O + top links, "auth" = Back link only (log-in cards),
+   "brand"   = myPTO | MANGAUNG header + grey footer, anything else = icon header + orange navigation tabs. *@
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+@inject PTO_Management_System.Data.PtoDbContext Db
+@{
+    bool signedIn = User.Identity != null && User.Identity.IsAuthenticated;
+    bool isStaff = User.IsInRole(WebConstants.RoleAdmin) || User.IsInRole(WebConstants.RoleOfficer);
+    bool isAdmin = User.IsInRole(WebConstants.RoleAdmin);
+    bool isUser = User.IsInRole(WebConstants.RoleUser);
+    string controller = (ViewContext.RouteData.Values["controller"] ?? "").ToString();
+    string action = (ViewContext.RouteData.Values["action"] ?? "").ToString();
+    string mode = ViewData["Mode"] as string ?? "";
+    Func<string, string> on = c => string.Equals(controller, c, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    Func<string, string, string> onAction = (c, a) => string.Equals(controller, c, StringComparison.OrdinalIgnoreCase) && string.Equals(action, a, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+
+    // Name shown at the top right (the beneficiary's name, like "Aiden Mlambo" on the screens)
+    string displayName = "";
+    if (isStaff) { displayName = isAdmin ? "System Administrator" : "PTO Officer"; }
+    else if (signedIn)
+    {
+        var uid = UserManager.GetUserId(User);
+        var ben = Db.Beneficiaries.Where(x => x.UserId == uid).Select(x => new { x.FirstNames, x.Surname }).FirstOrDefault();
+        displayName = ben != null ? (ben.FirstNames + " " + ben.Surname).Trim() : User.Identity.Name;
+    }
+    string initials = "";
+    foreach (var part in (displayName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2)) { initials += char.ToUpper(part[0]); }
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - myPTO Mangaung</title>
+    <link rel="icon" type="image/png" href="~/images/mangaung-logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="mode-@(mode == "" ? "app" : mode)">
+    <div class="bg-logo" aria-hidden="true"></div>
+
+@if (mode == "welcome")
+{
+    <header class="welcome-header">
+        <a class="brand brand-pto" asp-controller="Home" asp-action="Index">
+            <img src="~/images/mangaung-logo.png" alt="Mangaung Metropolitan Municipality" />
+            <span>P.T.O</span>
+        </a>
+        <nav class="welcome-nav" aria-label="Main">
+            <a asp-controller="Home" asp-action="About">About Us</a>
+            <a asp-controller="Home" asp-action="About">Services</a>
+            <a asp-controller="Home" asp-action="About">Team</a>
+            <a asp-controller="Home" asp-action="Contact">Contact Us</a>
+            <a class="login-pill" asp-controller="Account" asp-action="Login">Login</a>
+        </nav>
+    </header>
+}
+else if (mode == "auth")
+{
+    <a class="auth-back" asp-controller="Home" asp-action="Index">&larr; Back</a>
+}
+else if (mode == "brand")
+{
+    <header class="site-header">
+        <a class="brand brand-myPTO" asp-controller="Home" asp-action="Index">
+            <span class="mp"><i>my</i>PTO</span>
+            <span class="sep"></span>
+            <span class="mg">
+                <svg viewBox="0 0 28 36" aria-hidden="true"><rect x="0" y="14" width="7" height="22" rx="3" fill="#F26B21"/><rect x="10" y="0" width="7" height="36" rx="3" fill="#111"/><rect x="20" y="8" width="7" height="28" rx="3" fill="#7A9A0E"/></svg>
+                MANGAUNG
+            </span>
+        </a>
+        @if (signedIn && !isStaff)
+        {
+            <div class="avatar-chip"><b>@initials</b><span>@displayName</span></div>
+        }
+    </header>
+}
+else
+{
+    <header class="site-header">
+        @if (isStaff || signedIn)
+        {
+            <a class="brand" asp-controller="@(isStaff ? "Admin" : "MyPto")" asp-action="@(isStaff ? "Dashboard" : "Index")" aria-label="Home">
+                <svg class="brand-icon" viewBox="0 0 28 36" aria-hidden="true"><rect x="0" y="14" width="7" height="22" rx="3" fill="#F26B21"/><rect x="10" y="0" width="7" height="36" rx="3" fill="#111"/><rect x="20" y="8" width="7" height="28" rx="3" fill="#7A9A0E"/></svg>
+            </a>
+            <div class="header-user">
+                @if (!isStaff)
+                {
+                    <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0">
+                        <button type="submit" class="out">Log out</button>
+                    </form>
+                }
+                <span>@displayName</span>
+                @if (isStaff)
+                {
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4.2" fill="#111"/><path d="M3.5 21c0-4.6 3.8-7.6 8.5-7.6s8.5 3 8.5 7.6z" fill="#111"/></svg>
+                }
+                else
+                {
+                    <a asp-controller="MyPto" asp-action="Profile" title="My information"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4.2" fill="#111"/><path d="M3.5 21c0-4.6 3.8-7.6 8.5-7.6s8.5 3 8.5 7.6z" fill="#111"/></svg></a>
+                }
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="12" r="5" fill="none" stroke="#111" stroke-width="2.4"/><path d="M15 17.5h6" stroke="#111" stroke-width="2.4" stroke-linecap="round"/></svg>
+            </div>
+        }
+        else
+        {
+            <a class="brand brand-myPTO" asp-controller="Home" asp-action="Index">
+                <span class="mp"><i>my</i>PTO</span>
+                <span class="sep"></span>
+                <span class="mg">
+                    <svg viewBox="0 0 28 36" aria-hidden="true"><rect x="0" y="14" width="7" height="22" rx="3" fill="#F26B21"/><rect x="10" y="0" width="7" height="36" rx="3" fill="#111"/><rect x="20" y="8" width="7" height="28" rx="3" fill="#7A9A0E"/></svg>
+                    MANGAUNG
+                </span>
+            </a>
+        }
+    </header>
+
+    <nav class="site-nav" aria-label="Main">
+        <div class="nav-inner">
+            @if (isStaff)
+            {
+                <a class="@onAction("Admin", "Dashboard")" asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+                <a class="@onAction("Admin", "Applications")" asp-controller="Admin" asp-action="Applications">Applications</a>
+                <a class="@(onAction("Admin", "Records") + onAction("Admin", "Detail"))" asp-controller="Admin" asp-action="Records">PTO Records</a>
+                <a class="@on("Sites")" asp-controller="Sites" asp-action="Index">Sites</a>
+                <a class="@on("Reports")" asp-controller="Reports" asp-action="Index">Reports</a>
+                @if (isAdmin)
+                {
+                    <a class="@on("Audit")" asp-controller="Audit" asp-action="Index">Audit Log</a>
+                }
+                <form asp-controller="Account" asp-action="Logout" method="post" class="nav-form">
+                    <button type="submit" class="nav-btn">Log out</button>
+                </form>
+            }
+            else if (isUser)
+            {
+                <a class="@onAction("Home", "About")" asp-controller="Home" asp-action="About">About us</a>
+                <a class="@onAction("MyPto", "Track")" asp-controller="MyPto" asp-action="Track">Track Application</a>
+                <a class="@onAction("MyPto", "Application")" asp-controller="MyPto" asp-action="Application">My Property</a>
+                <a class="@onAction("MyPto", "Notifications")" asp-controller="MyPto" asp-action="Notifications">Notifications</a>
+                <a class="@onAction("Home", "Contact")" asp-controller="Home" asp-action="Contact">Contact us</a>
+            }
+            else
+            {
+                <a class="@onAction("Home", "About")" asp-controller="Home" asp-action="About">About us</a>
+                <a class="@onAction("Account", "Search")" asp-controller="Account" asp-action="Search">Track Application</a>
+                <a class="@onAction("Home", "Contact")" asp-controller="Home" asp-action="Contact">Contact us</a>
+            }
+        </div>
+    </nav>
+}
+
+@if (mode == "auth")
+{
+    <main class="auth-wrap">
+        @if (TempData["Message"] != null) { <div class="flash flash-ok" role="status">@TempData["Message"]</div> }
+        @if (TempData["Error"] != null) { <div class="flash flash-err" role="alert">@TempData["Error"]</div> }
+        @RenderBody()
+    </main>
+}
+else
+{
+    <main class="site-main">
+        @if (TempData["Message"] != null)
+        {
+            <div class="flash flash-ok" role="status">@TempData["Message"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="flash flash-err" role="alert">@TempData["Error"]</div>
+        }
+        @RenderBody()
+    </main>
+}
+
+@if (mode == "brand")
+{
+    <footer class="site-footer">
+        <span>&copy; @DateTime.Now.Year Mangaung Metropolitan Municipality &middot; Permission To Occupy</span>
+        <span><a asp-controller="Home" asp-action="Privacy">Privacy</a></span>
+    </footer>
+}
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,30 @@
+@* Screen 13 - Review and submit. *@
+@model ReviewViewModel
+@{
+    ViewData["Title"] = "Review";
+    var b = Model.Beneficiary;
+    string maskedId = string.IsNullOrEmpty(b.IdNumber) ? "" : b.IdNumber.Substring(0, Math.Min(3, b.IdNumber.Length)) + new string('•', Math.Max(0, b.IdNumber.Length - 3));
+}
+<section class="panel">
+    <div class="panel-head">PTO Application &middot; Review</div>
+    <form asp-action="Submit" method="post" data-once>
+        <div class="panel-body">
+            <dl class="kv">
+                <dt>Name</dt><dd>@b.FirstNames @b.Surname</dd>
+                <dt>ID number</dt><dd>@maskedId</dd>
+                <dt>Gender</dt><dd>@b.Gender</dd>
+                <dt>Monthly income</dt><dd>R @b.MonthlyIncome.ToString("N0").Replace(",", " ")</dd>
+                <dt>Area applied for</dt><dd>@Model.Application.Settlement</dd>
+                <dt>Dependants</dt><dd>@b.Dependants.Count @(b.Dependants.Count == 1 ? "dependant" : "dependants") added</dd>
+                <dt>Eligibility</dt><dd>@Model.RequirementsMet of 5 requirements met</dd>
+                <dt>Documents</dt><dd>@Model.DocumentsAttached of @Model.DocumentsRequired attached</dd>
+            </dl>
+            <p class="hint">By submitting you confirm the information is true. The system then decides automatically: your score depends on your income, veteran status, age and dependants, and the free sites in the area go to the highest scores.</p>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" class="btn">Submit application</button>
+            <a class="btn" asp-action="Documents">Back</a>
+            <a class="btn" asp-controller="Apply" asp-action="Cancel">Cancel</a>
+        </div>
+    </form>
+</section>

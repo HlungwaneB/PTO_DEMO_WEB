@@ -1,0 +1,31 @@
+@* Screen 14 - Application submitted. The SYSTEM has already decided or the application waits for the area target. *@
+@model PtoApplication
+@{ ViewData["Title"] = "Application submitted"; }
+<section class="card submitted-card" style="max-width:700px;margin:6px auto 0;border-radius:14px;box-shadow:0 2px 6px rgba(0,0,0,.18)">
+    @if (Model.Status == PtoStatus.Rejected)
+    {
+        <h2>Application received</h2>
+        <p class="muted small">The system could not approve it.</p>
+        <div class="alert-err">@Model.RejectReason</div>
+    }
+    else
+    {
+        <div class="big-check">&#10003;</div>
+        <h2>Application submitted</h2>
+    }
+    <div class="k">Reference number</div>
+    <div class="ref-box">@Model.ReferenceNumber</div>
+    @if (Model.Status == PtoStatus.Active)
+    {
+        <p class="muted small">The system approved your application automatically. PTO <b>@Model.PtoNumber</b>, site <b>@(Model.Site != null ? Model.Site.SiteNumber : "")</b>, @Model.Settlement.</p>
+    }
+    else if (Model.Status != PtoStatus.Rejected)
+    {
+        <p class="muted small">You will be notified when the administrator reviews your application. The system decides when enough applications were received for @Model.Settlement.</p>
+    }
+    <p class="muted small">Log in with this number and the password you created to track your application.</p>
+    <div class="btn-row" style="justify-content:center;margin-top:12px">
+        <a class="btn" asp-controller="MyPto" asp-action="Track">Track my application</a>
+        <a class="btn" asp-controller="MyPto" asp-action="Index">Back home</a>
+    </div>
+</section>

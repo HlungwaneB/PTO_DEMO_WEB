@@ -1,0 +1,74 @@
+@* Screen 10 - Personal details and ID. The server checks the ID number (Luhn, date of birth, gender, citizen, over 21). *@
+@model PersonalViewModel
+@{
+    ViewData["Title"] = "Personal details";
+    string dobY = Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("yyyy") : "";
+    string dobM = Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("MM") : "";
+    string dobD = Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("dd") : "";
+}
+<section class="panel">
+    <div class="panel-head">PTO Application</div>
+    <form asp-action="Personal" method="post" data-once>
+        <div class="panel-body">
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+            <div class="field">
+                <label asp-for="Surname">Surname</label>
+                <input asp-for="Surname" autocomplete="family-name" />
+                <span asp-validation-for="Surname" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Initials">Initials</label>
+                <input asp-for="Initials" maxlength="10" />
+                <span asp-validation-for="Initials" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Title">Title</label>
+                <select asp-for="Title">
+                    <option value="">Select</option>
+                    <option>Mr</option><option>Mrs</option><option>Ms</option><option>Miss</option><option>Dr</option>
+                </select>
+                <span asp-validation-for="Title" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="FirstNames">First name(s)</label>
+                <input asp-for="FirstNames" autocomplete="given-name" />
+                <span asp-validation-for="FirstNames" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="DateOfBirth">Date of Birth(yyyy\mm\dd)</label>
+                <div class="dob" data-dob>
+                    <input type="text" class="y" inputmode="numeric" maxlength="4" placeholder="yyyy" value="@dobY" aria-label="Year" />
+                    <span>/</span>
+                    <input type="text" class="m" inputmode="numeric" maxlength="2" placeholder="mm" value="@dobM" aria-label="Month" />
+                    <span>/</span>
+                    <input type="text" class="d" inputmode="numeric" maxlength="2" placeholder="dd" value="@dobD" aria-label="Day" />
+                    <input asp-for="DateOfBirth" type="hidden" value="@(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("yyyy-MM-dd") : "")" />
+                </div>
+                <span asp-validation-for="DateOfBirth" class="field-error"></span>
+            </div>
+            <div class="field">
+                <span class="label">Enter the following</span>
+            </div>
+            <div class="field">
+                <label asp-for="IdNumber">ID number</label>
+                <input asp-for="IdNumber" data-idnumber inputmode="numeric" maxlength="13" autocomplete="off" />
+                <div class="hint">13 digits. This will be your reference number and your log-in name.</div>
+                <span asp-validation-for="IdNumber" class="field-error"></span>
+            </div>
+            <div class="field">
+                <span class="label">Gender</span>
+                <div class="yesno">
+                    <label><input type="radio" asp-for="Gender" value="Male" /> Male</label>
+                    <label><input type="radio" asp-for="Gender" value="Female" /> Female</label>
+                </div>
+                <span asp-validation-for="Gender" class="field-error"></span>
+            </div>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" class="btn">Continue</button>
+            <a class="btn" asp-action="Eligibility">Back</a>
+            <a class="btn" asp-controller="Apply" asp-action="Cancel">Cancel</a>
+        </div>
+    </form>
+</section>

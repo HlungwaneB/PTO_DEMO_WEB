@@ -1,0 +1,79 @@
+@* Screen 07 - My Application ("My Property"): current site, lease period and the documents. *@
+@model PtoApplication
+@{
+    ViewData["Title"] = "My Application";
+    ViewData["Mode"] = "brand";
+    var b = Model.Beneficiary;
+    string status = Model.Status;
+}
+<div class="page-head"><h1>My Application</h1><p>View &amp; Track your Application</p></div>
+
+<div class="cards2">
+    <div class="card">
+        <div class="k">Current Site</div>
+        <div class="v">@(Model.Site != null ? Model.Site.SiteNumber : "Not allocated yet")</div>
+        <div><partial name="_StatusBadge" model="Model.Status" />
+            <span class="muted small">&nbsp;@(Model.Site != null ? Model.Site.SiteNumber + " · " + Model.Site.Settlement : Model.Settlement)</span></div>
+    </div>
+    <div class="card">
+        <div class="k">Lease period</div>
+        <div class="v" style="font-size:1rem">@(Model.IssueDate.HasValue ? Model.IssueDate.Value.ToString("dd MMM yyyy") : "-") &ndash; @(Model.ExpiryDate.HasValue ? Model.ExpiryDate.Value.ToString("dd MMM yyyy") : "-")</div>
+        @if (Model.Status == PtoStatus.Expiring || Model.Status == PtoStatus.Expired)
+        {
+            <span class="badge b-amber">Check renewal</span>
+        }
+    </div>
+</div>
+
+<div class="btn-row" style="margin-bottom:22px">
+    <a class="btn" asp-action="Track">Track progress</a>
+    @if (status == PtoStatus.Active || status == PtoStatus.Expiring || status == PtoStatus.Expired || status == PtoStatus.Renewed)
+    {
+        <a class="btn" asp-action="Renewal">Request renewal</a>
+    }
+    @if (status == PtoStatus.Pending || status == PtoStatus.Active || status == PtoStatus.Expiring || status == PtoStatus.Expired || status == PtoStatus.Renewed)
+    {
+        <a class="btn" asp-action="Deregister">@(status == PtoStatus.Pending ? "Withdraw application" : "De-register")</a>
+    }
+    <a class="btn" asp-action="Index">Back</a>
+</div>
+
+@if (Model.Status == PtoStatus.Pending && ViewBag.Area != null)
+{
+    var area = (AreaRow)ViewBag.Area;
+    <div class="alert-info">
+        Your application is waiting. The system decides automatically when @Model.Settlement has received
+        @area.Area.ApplicationTarget applications (now @area.Pending). There are @area.FreeSites free sites.
+    </div>
+}
+@if (Model.Status == PtoStatus.Rejected)
+{
+    <div class="alert-err">@Model.RejectReason <a asp-action="Reapply">Apply for another area</a></div>
+}
+@if (Model.Status == PtoStatus.Deregistered)
+{
+    <div class="alert-warn">This PTO was de-registered. <a asp-action="Reapply">Apply again</a></div>
+}
+
+<div class="card" style="max-width:900px">
+    <div class="k">Details</div>
+    <dl class="kv" style="margin-top:12px">
+        <dt>Reference number</dt><dd>@Model.ReferenceNumber</dd>
+        <dt>PTO number</dt><dd>@(Model.PtoNumber ?? "Not issued yet")</dd>
+        <dt>Name</dt><dd>@b.FullName</dd>
+        <dt>Area applied for</dt><dd>@Model.Settlement</dd>
+        <dt>Need score</dt><dd>@(Model.Score > 0 ? Model.Score.ToString() : "-")</dd>
+        <dt>Submitted</dt><dd>@(Model.SubmittedAt.HasValue ? Model.SubmittedAt.Value.ToString("dd MMM yyyy") : "-")</dd>
+        @if (Model.Status == PtoStatus.Rejected) { <dt>Reason</dt><dd>@Model.RejectReason</dd> }
+        @if (Model.Status == PtoStatus.Deregistered) { <dt>Reason</dt><dd>@Model.DeregisterReason</dd> }
+    </dl>
+    <div class="section-title">Documents</div>
+    @if (Model.Documents.Count == 0) { <p class="muted small">No documents.</p> }
+    @foreach (var d in Model.Documents)
+    {
+        <div class="doc-row">
+            <span>@d.DocumentType &middot; <a asp-controller="Documents" asp-action="Download" asp-route-id="@d.Id">@d.OriginalFileName</a></span>
+            <partial name="_StatusBadge" model="d.VerificationStatus" />
+        </div>
+    }
+</div>

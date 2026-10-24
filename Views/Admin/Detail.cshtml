@@ -1,0 +1,73 @@
+@* Screen 35 - PTO Details. READ ONLY: the system approved / rejected the application, staff only look. *@
+@model DetailViewModel
+@{
+    ViewData["Title"] = "PTO detail";
+    var a = Model.Application;
+    var b = a.Beneficiary;
+}
+<section class="panel">
+    <div class="panel-head">PTO Details &middot; @(a.PtoNumber ?? a.ReferenceNumber)</div>
+    <div class="panel-body">
+        <dl class="kv">
+            <dt>Beneficiary</dt><dd>@b.FullName</dd>
+            <dt>ID / reference</dt><dd>@b.IdNumber</dd>
+            <dt>Site</dt><dd>@(a.Site != null ? a.Site.SiteNumber + " \u00b7 " + a.Site.Settlement + " \u00b7 " + a.Site.SizeSqm + " m\u00b2" : "-")</dd>
+            <dt>Area applied for</dt><dd>@a.Settlement</dd>
+            <dt>Issued</dt><dd>@(a.IssueDate.HasValue ? a.IssueDate.Value.ToString("dd MMM yyyy") : "-")</dd>
+            <dt>Valid until</dt><dd>@(a.ExpiryDate.HasValue ? a.ExpiryDate.Value.ToString("dd MMM yyyy") : "-")</dd>
+            <dt>Status</dt><dd><partial name="_StatusBadge" model="a.Status" /></dd>
+        </dl>
+        <div class="journey" aria-hidden="true">
+            @for (int i = 1; i <= 5; i++) { <span class="@(i <= Model.PathwayStage ? "on" : i == Model.PathwayStage + 1 ? "now" : "")"></span> }
+        </div>
+        <div class="journey-label">@Model.PathwayText</div>
+
+        <div class="section-title" style="margin-top:22px">Record history</div>
+        <ul class="timeline">
+            @foreach (var h in a.History.OrderByDescending(x => x.ChangedAt))
+            {
+                <li class="@(h.ToStatus == PtoStatus.Expiring ? "now" : h.ToStatus == PtoStatus.Rejected || h.ToStatus == PtoStatus.Deregistered ? "" : "done")">
+                    <div class="t-title">Status &rarr; @h.ToStatus</div>
+                    <div class="t-detail">@h.ChangedBy &middot; @h.ChangedAt.ToString("dd MMM yyyy HH:mm") @(string.IsNullOrEmpty(h.Note) ? "" : "\u00b7 " + h.Note)</div>
+                </li>
+            }
+        </ul>
+
+        <div class="section-title">Decision details</div>
+        <div class="alert-info">
+            Decisions are made by the system. @(a.Status == PtoStatus.Pending
+                ? "This application is waiting until " + a.Settlement + " has received " + (Model.Area != null ? Model.Area.Area.ApplicationTarget.ToString() : "enough") + " applications."
+                : "")
+        </div>
+        <dl class="kv">
+            <dt>Cellphone</dt><dd>@b.Cellphone</dd>
+            <dt>Monthly income</dt><dd>R @b.MonthlyIncome.ToString("N0").Replace(",", " ")</dd>
+            <dt>Military veteran</dt><dd>@(b.IsMilitaryVeteran ? "Yes" : "No")</dd>
+            <dt>Elderly</dt><dd>@(b.IsElderly ? "Yes" : "No")</dd>
+            <dt>Dependants</dt><dd>@b.Dependants.Count</dd>
+            <dt>Need score</dt><dd><b>@a.Score</b> <span class="muted small">@a.ScoreDetail</span></dd>
+            <dt>Submitted</dt><dd>@(a.SubmittedAt.HasValue ? a.SubmittedAt.Value.ToString("dd MMM yyyy") : "-")</dd>
+            @if (!string.IsNullOrEmpty(a.RejectReason)) { <dt>Rejected because</dt><dd>@a.RejectReason</dd> }
+            @if (!string.IsNullOrEmpty(a.DeregisterReason)) { <dt>De-registered because</dt><dd>@a.DeregisterReason</dd> }
+        </dl>
+
+        <div class="section-title">Documents (verified automatically)</div>
+        @foreach (var d in a.Documents)
+        {
+            <div class="doc-row">
+                <span>@d.DocumentType &middot; <a asp-controller="Documents" asp-action="Download" asp-route-id="@d.Id">@d.OriginalFileName</a></span>
+                <partial name="_StatusBadge" model="d.VerificationStatus" />
+            </div>
+        }
+
+        <div class="section-title">Renewals</div>
+        @if (!a.Renewals.Any()) { <p class="muted small">No renewals yet.</p> }
+        <ul class="small">
+            @foreach (var r in a.Renewals.OrderByDescending(x => x.RequestedAt))
+            {
+                <li>@r.RequestedAt.ToString("dd MMM yyyy") &middot; @r.Status @(string.IsNullOrEmpty(r.Notes) ? "" : "(" + r.Notes + ")")</li>
+            }
+        </ul>
+    </div>
+    <div class="panel-foot"><a class="btn" asp-action="Records">Back</a></div>
+</section>

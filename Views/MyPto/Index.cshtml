@@ -1,0 +1,39 @@
+@* Screen 05 - Home (beneficiary): welcome line, expiry banner, two big tiles and "My Site". *@
+@model HomeViewModel
+@{ ViewData["Title"] = "Home"; var app = Model.Application; }
+<div class="page-head"><h1>Welcome, @Model.Beneficiary.FirstNames</h1></div>
+
+@if (Model.ShowExpiryAlert)
+{
+    <div class="alert-banner">
+        <span>@(app.Status == PtoStatus.Expired
+            ? "Your PTO has expired. Request a renewal to stay covered."
+            : "Your PTO expires on " + (app.ExpiryDate.HasValue ? app.ExpiryDate.Value.ToString("dd MMM yyyy") : "") + " (" + app.DaysToExpiry + " days). Request a renewal to stay covered.")</span>
+        <a class="btn" asp-action="Renewal">Renew</a>
+    </div>
+}
+
+<div class="big-tiles">
+    <a class="big-tile" asp-action="Track">Track Application</a>
+    <a class="big-tile" asp-action="Renewal">Renew PTO</a>
+</div>
+
+<h2 class="h2">My Site</h2>
+@if (app != null)
+{
+    <a class="site-card" asp-action="Application" style="display:block;text-decoration:none;color:inherit">
+        <div class="top">
+            <h3>@(app.Site != null ? app.Site.SiteNumber : "Site not allocated yet")</h3>
+            <partial name="_StatusBadge" model="app.Status" />
+        </div>
+        <div class="meta">@(app.Site != null ? app.Site.SiteNumber + " \u00b7 " + app.Site.Settlement + " \u00b7 " + app.Site.SizeSqm + " m\u00b2" : app.Settlement + " \u00b7 waiting for the system decision")</div>
+        <div class="journey" aria-hidden="true">
+            @for (int i = 1; i <= 5; i++) { <span class="@(i <= PtoStatus.PathwayStage(app.Status) ? "on" : i == PtoStatus.PathwayStage(app.Status) + 1 ? "now" : "")"></span> }
+        </div>
+        <div class="journey-label">@PtoStatus.PathwayText(app.Status)</div>
+    </a>
+}
+else
+{
+    <p class="muted">You have no application yet.</p>
+}

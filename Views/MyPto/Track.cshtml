@@ -1,0 +1,25 @@
+@* Screen 15 - Track PTO: 5-segment formalisation journey + dated timeline. *@
+@model TrackViewModel
+@{ ViewData["Title"] = "Track PTO"; }
+<section class="panel">
+    <div class="panel-head">Track PTO &middot; @Model.Application.ReferenceNumber</div>
+    <div class="panel-body">
+        <div class="journey" aria-hidden="true">
+            @for (int i = 1; i <= 5; i++) { <span class="@(i <= Model.PathwayStage ? "on" : i == Model.PathwayStage + 1 ? "now" : "")"></span> }
+        </div>
+        <div class="journey-label" style="margin-bottom:18px">@Model.PathwayText</div>
+        <ul class="timeline">
+            @foreach (var step in Model.Steps)
+            {
+                <li class="@step.State">
+                    <div class="t-title">@step.Title</div>
+                    <div class="t-detail">@step.Detail</div>
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="panel-foot">
+        <a class="btn" asp-action="Renewal">Request renewal</a>
+        <a class="btn" asp-action="Index">Back</a>
+    </div>
+</section>

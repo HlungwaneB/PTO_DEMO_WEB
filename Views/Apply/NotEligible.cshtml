@@ -1,0 +1,19 @@
+@* Screen 20 - Not eligible. ViewBag.Reasons holds the failed rules. *@
+@{
+    ViewData["Title"] = "Not eligible";
+    var reasons = ViewBag.Reasons as IEnumerable<string> ?? new string[0];
+}
+<section class="panel narrow">
+    <div class="panel-head">Not eligible</div>
+    <div class="panel-body">
+        <p>Based on your answers you do not qualify for a Permission To Occupy right now:</p>
+        <ul>
+            @foreach (var r in reasons) { <li>@r</li> }
+        </ul>
+        <p class="muted small">If an answer was entered by mistake you can change it and try again.</p>
+    </div>
+    <div class="panel-foot">
+        <a class="btn" asp-controller="Home" asp-action="Index">Home</a>
+        <a class="btn btn-primary" asp-action="Eligibility">Change my answers</a>
+    </div>
+</section>

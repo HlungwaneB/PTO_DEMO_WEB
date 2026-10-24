@@ -1,0 +1,39 @@
+@* Screen 12 - Required documents. PDF / PNG / JPG, maximum 5 MB each. *@
+@model DocumentsPageViewModel
+@{ ViewData["Title"] = "Documents"; }
+<section class="panel">
+    <div class="panel-head">PTO Application &middot; Required documents</div>
+    <div class="panel-body">
+        @foreach (var row in Model.Rows)
+        {
+            <div class="doc-row">
+                <div class="d-name">@row.DocumentType @if (!row.Required) { <text> &mdash; if you have any</text> }
+                    @if (row.Uploaded != null) { <div class="muted small">@row.Uploaded.OriginalFileName</div> }
+                </div>
+                @if (row.Required || row.Uploaded != null)
+                {
+                    <form asp-action="Upload" method="post" enctype="multipart/form-data" class="doc-upload">
+                        <input type="hidden" name="documentType" value="@row.DocumentType" />
+                        @if (row.Uploaded != null) { <span class="badge b-green">Uploaded</span> }
+                        <label class="btn btn-sm" style="cursor:pointer">@(row.Uploaded != null ? "Replace" : "Upload")
+                            <input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg" required hidden onchange="this.form.submit()" />
+                        </label>
+                    </form>
+                }
+            </div>
+        }
+        <p class="hint" style="margin-top:14px">Upload a clear PDF, PNG or JPG (maximum 5 MB each). The system verifies every file automatically.</p>
+    </div>
+    <div class="panel-foot">
+        @if (Model.AllRequiredUploaded)
+        {
+            <a class="btn" asp-action="Review">Continue</a>
+        }
+        else
+        {
+            <span class="btn" style="opacity:.5;cursor:not-allowed" title="Upload all required documents first">Continue</span>
+        }
+        <a class="btn" asp-controller="Home" asp-action="Index">Back</a>
+        <a class="btn" asp-controller="Apply" asp-action="Cancel">Cancel</a>
+    </div>
+</section>

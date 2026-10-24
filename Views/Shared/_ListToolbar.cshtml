@@ -1,0 +1,22 @@
+@* Search pill + filter chips shared by Applications and PTO records. Model = the list of filter names; the action is the current one. *@
+@model string[]
+@{
+    string action = (ViewContext.RouteData.Values["action"] ?? "").ToString();
+    string current = ViewBag.Filter as string ?? "All";
+    string search = ViewBag.Search as string;
+    string placeholder = ViewBag.SearchPlaceholder as string ?? "Search";
+}
+<div class="toolbar stack no-print">
+    <form method="get" asp-action="@action" class="searchbox">
+        <input type="hidden" name="filter" value="@current" />
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="11" r="6" fill="none" stroke="#111" stroke-width="2.2"/><path d="M15 16.5h6" stroke="#111" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <input type="search" name="search" value="@search" placeholder="@placeholder" />
+        <button type="submit">Search</button>
+    </form>
+    <div class="chips">
+        @foreach (var f in Model)
+        {
+            <a class="chip @(f == current ? "on" : "")" asp-action="@action" asp-route-filter="@f" asp-route-search="@search">@f</a>
+        }
+    </div>
+</div>

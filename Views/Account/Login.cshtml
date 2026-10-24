@@ -1,0 +1,24 @@
+@* Screen 02 - Log in. Beneficiaries log in with their ID number (or e-mail) and the password they created. *@
+@model LoginViewModel
+@{ ViewData["Title"] = "Log in"; ViewData["Mode"] = "auth"; }
+<section class="auth-card">
+    <svg class="bars" viewBox="0 0 28 36" aria-hidden="true"><rect x="0" y="14" width="7" height="22" rx="3" fill="#F26B21"/><rect x="10" y="0" width="7" height="36" rx="3" fill="#111"/><rect x="20" y="8" width="7" height="28" rx="3" fill="#7A9A0E"/></svg>
+    <h1>Log in</h1>
+    <form asp-action="Login" method="post" data-once>
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div class="af">
+            <label asp-for="Identifier">ID number or e-mail</label>
+            <input asp-for="Identifier" autocomplete="username" inputmode="text" />
+            <span asp-validation-for="Identifier" class="field-error"></span>
+        </div>
+        <div class="af">
+            <label asp-for="Password">Password</label>
+            <input asp-for="Password" autocomplete="current-password" />
+            <span asp-validation-for="Password" class="field-error"></span>
+        </div>
+        <a class="forgot" asp-controller="Home" asp-action="Contact">Forgot Password</a>
+        <button type="submit" class="login-btn">LOG IN</button>
+    </form>
+    <p class="alt">Haven't you applied yet? <a asp-controller="Apply" asp-action="Eligibility">Apply</a></p>
+</section>

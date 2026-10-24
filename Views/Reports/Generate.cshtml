@@ -1,0 +1,27 @@
+@model GenerateReportViewModel
+@{ ViewData["Title"] = "Generate report"; var types = ViewBag.Types as string[] ?? new string[0]; }
+<section class="panel">
+    <div class="panel-head">Generate report</div>
+    <form asp-action="Generate" method="post" data-once>
+        <div class="panel-body">
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+            <div class="field">
+                <label asp-for="ReportType">Report</label>
+                <select asp-for="ReportType">
+                    <option value="">Choose a report</option>
+                    @foreach (var t in types) { <option value="@t" selected="@(t == Model.ReportType)">@t</option> }
+                </select>
+                <span asp-validation-for="ReportType" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Period"></label>
+                <input asp-for="Period" />
+                <span asp-validation-for="Period" class="field-error"></span>
+            </div>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" class="btn">Generate</button>
+            <a class="btn" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+</section>

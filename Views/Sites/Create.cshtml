@@ -1,0 +1,19 @@
+@* Screen 38 - Add Site. *@
+@model Site
+@{ ViewData["Title"] = "Add site"; }
+<section class="panel">
+    <div class="panel-head">Add Site</div>
+    <form asp-action="Create" method="post" data-once>
+        <div class="panel-body">
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+            <div class="field"><label asp-for="SiteNumber">Site number</label><input asp-for="SiteNumber" /><span asp-validation-for="SiteNumber" class="field-error"></span></div>
+            <div class="field"><label asp-for="Settlement">Settlement</label><input asp-for="Settlement" /><div class="hint">A new settlement automatically becomes a new area (default target: 5 applications).</div><span asp-validation-for="Settlement" class="field-error"></span></div>
+            <div class="field"><label asp-for="SizeSqm">Site size (m&sup2;)</label><input asp-for="SizeSqm" type="number" min="1" /><span asp-validation-for="SizeSqm" class="field-error"></span></div>
+            <div class="field"><label asp-for="Location">Location / GPS</label><input asp-for="Location" /><span asp-validation-for="Location" class="field-error"></span></div>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" class="btn">Save site</button>
+            <a class="btn" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+</section>

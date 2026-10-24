@@ -1,0 +1,45 @@
+@* Screen 40 - View, print or download a report. *@
+@model Report
+@{
+    ViewData["Title"] = Model.Name;
+    var lines = (Model.Content ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(l => l.TrimEnd('\r')).ToList();
+    // Very small CSV reader that understands "quoted, values"
+    Func<string, List<string>> cells = line =>
+    {
+        var result = new List<string>(); var sb = new System.Text.StringBuilder(); bool q = false;
+        foreach (var ch in line)
+        {
+            if (ch == '"') q = !q;
+            else if (ch == ',' && !q) { result.Add(sb.ToString()); sb.Clear(); }
+            else sb.Append(ch);
+        }
+        result.Add(sb.ToString());
+        return result;
+    };
+}
+@if (Context.Request.Query["print"] == "true") { <script>window.addEventListener("load", function () { window.print(); });</script> }
+<section class="panel wide">
+    <div class="panel-head">@Model.Name &middot; @Model.Period</div>
+    <div class="panel-body">
+        <p class="muted small">Generated @Model.GeneratedAt.ToString("dd MMM yyyy HH:mm") by @Model.GeneratedBy</p>
+        @if (lines.Count > 0)
+        {
+            <div class="table-wrap">
+                <table class="grid">
+                    <thead><tr>@foreach (var c in cells(lines[0])) { <th>@c</th> }</tr></thead>
+                    <tbody>
+                    @foreach (var line in lines.Skip(1))
+                    {
+                        <tr>@foreach (var c in cells(line)) { <td>@c</td> }</tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+    <div class="panel-foot no-print">
+        <button class="btn" type="button" onclick="window.print()">Print</button>
+        <a class="btn" asp-action="Download" asp-route-id="@Model.Id">Download Excel (CSV)</a>
+        <a class="btn" asp-action="Index">Back</a>
+    </div>
+</section>

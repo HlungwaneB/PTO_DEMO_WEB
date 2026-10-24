@@ -1,0 +1,56 @@
+@* Screen 09 - Reliable information: the five qualifying questions. *@
+@model EligibilityViewModel
+@{ ViewData["Title"] = "Reliable information"; }
+@functions {
+    // Renders one YES / NO question bound to a bool? property
+    Microsoft.AspNetCore.Html.IHtmlContent YesNo(string name, string label, bool? value)
+    {
+        var yes = value == true ? "checked" : "";
+        var no = value == false ? "checked" : "";
+        // Server-side error text (after a post) is written inside the validation span
+        var err = ViewData.ModelState.TryGetValue(name, out var entry) && entry.Errors.Count > 0
+            ? System.Net.WebUtility.HtmlEncode(entry.Errors[0].ErrorMessage) : "";
+        var cls = err == "" ? "field-validation-valid" : "field-validation-error";
+        return new Microsoft.AspNetCore.Html.HtmlString(
+            "<div class=\"field\"><span class=\"label\">" + label + "</span><div class=\"yesno\">" +
+            "<label><input type=\"radio\" name=\"" + name + "\" value=\"true\" " + yes + " /> YES</label>" +
+            "<label><input type=\"radio\" name=\"" + name + "\" value=\"false\" " + no + " /> NO</label></div>" +
+            "<span class=\"" + cls + "\" data-valmsg-for=\"" + name + "\" data-valmsg-replace=\"true\">" + err + "</span></div>");
+    }
+}
+<section class="panel">
+    <div class="panel-head">PTO Application</div>
+    <form asp-action="Eligibility" method="post" data-once>
+        <div class="panel-body">
+            <div class="sec-title">Reliable Information</div>
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+            <div class="field">
+                <label asp-for="MonthlyIncome">Monthly income (less than R3 500)</label>
+                <input asp-for="MonthlyIncome" type="number" step="0.01" min="0" />
+                <span asp-validation-for="MonthlyIncome" class="field-error"></span>
+            </div>
+
+            @YesNo("IsSouthAfrican", "South African / Naturalised", Model.IsSouthAfrican)
+            @YesNo("IsFirstTimeOwner", "First-time home owner", Model.IsFirstTimeOwner)
+            @YesNo("IsOver21", "Over 21", Model.IsOver21)
+            @YesNo("IsFirstTimeSubsidy", "First-time government subsidy recipient", Model.IsFirstTimeSubsidy)
+
+            <div class="field"><span class="label">Military veteran (optional)</span>
+                <div class="yesno">
+                    <label><input type="radio" name="IsMilitaryVeteran" value="true" @(Model.IsMilitaryVeteran ? "checked" : "") /> YES</label>
+                    <label><input type="radio" name="IsMilitaryVeteran" value="false" @(Model.IsMilitaryVeteran ? "" : "checked") /> NO</label>
+                </div></div>
+            <div class="field"><span class="label">Elderly person</span>
+                <div class="yesno">
+                    <label><input type="radio" name="IsElderly" value="true" @(Model.IsElderly ? "checked" : "") /> YES</label>
+                    <label><input type="radio" name="IsElderly" value="false" @(Model.IsElderly ? "" : "checked") /> NO</label>
+                </div></div>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" class="btn">Continue</button>
+            <a class="btn" asp-controller="Home" asp-action="Index">Back</a>
+            <a class="btn" asp-controller="Apply" asp-action="Cancel">Cancel</a>
+        </div>
+    </form>
+</section>

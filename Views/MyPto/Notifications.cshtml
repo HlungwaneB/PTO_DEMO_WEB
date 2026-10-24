@@ -1,0 +1,21 @@
+@* Screen 17 - Notifications. Unread ones (before this visit) get an orange outline. *@
+@model List<Notification>
+@{
+    ViewData["Title"] = "Notifications";
+    var unread = ViewBag.UnreadIds as List<int> ?? new List<int>();
+}
+<div class="page-head"><h1>Notifications</h1><p>Status updates, reminders and expiry alerts</p></div>
+@if (Model.Count == 0) { <p class="muted">No notifications yet.</p> }
+@foreach (var n in Model)
+{
+    string t = (n.Title ?? "").ToLower();
+    string dot = t.Contains("expir") || t.Contains("remind") ? "orange" : t.Contains("verif") || t.Contains("document") ? "blue" : "";
+    <div class="notif @(unread.Contains(n.Id) ? "unread" : "")">
+        <span class="dot @dot"></span>
+        <div class="n-body">
+            <div class="n-title">@n.Title</div>
+            <div class="n-text">@n.Message</div>
+        </div>
+        <div class="n-date">@(n.DateSent.Date == DateTime.Today ? "Today" : n.DateSent.ToString("dd MMM"))</div>
+    </div>
+}

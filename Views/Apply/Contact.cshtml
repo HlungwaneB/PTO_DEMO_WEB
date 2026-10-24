@@ -1,0 +1,63 @@
+@* Screen 11 - Contact + "Do you have dependants?". YES -> Dependent information, NO -> Create password. *@
+@model ContactViewModel
+@{ ViewData["Title"] = "Contact details"; }
+<section class="panel">
+    <div class="panel-head">PTO Application</div>
+    <form asp-action="Contact" method="post" data-once>
+        <div class="panel-body">
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+            <div class="field">
+                <label asp-for="Cellphone">Cellphone</label>
+                <input asp-for="Cellphone" type="tel" inputmode="tel" />
+                <span asp-validation-for="Cellphone" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="ConfirmCellphone">Confirm cellphone</label>
+                <input asp-for="ConfirmCellphone" type="tel" inputmode="tel" />
+                <span asp-validation-for="ConfirmCellphone" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Email">E-mail address</label>
+                <input asp-for="Email" type="email" autocomplete="email" />
+                <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="ConfirmEmail">Confirm e-mail address</label>
+                <input asp-for="ConfirmEmail" type="email" />
+                <span asp-validation-for="ConfirmEmail" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="HomeCellphone">Home cellphone</label>
+                <input asp-for="HomeCellphone" type="tel" inputmode="tel" />
+                <span asp-validation-for="HomeCellphone" class="field-error"></span>
+            </div>
+            @{ var areas = ViewBag.Areas as List<AreaRow> ?? new List<AreaRow>(); }
+            <div class="field">
+                <label asp-for="Settlement">Area applied for</label>
+                <select asp-for="Settlement">
+                    <option value="">Choose an area</option>
+                    @foreach (var a in areas)
+                    {
+                        <option value="@a.Area.Name" selected="@(a.Area.Name == Model.Settlement)">@a.Area.Name (@a.FreeSites free sites)</option>
+                    }
+                </select>
+                <div class="hint">Sites are limited. The system ranks the applicants and allocates the free sites automatically.</div>
+                <span asp-validation-for="Settlement" class="field-error"></span>
+            </div>
+            <div class="field">
+                <span class="label">Do you have dependants?</span>
+                <div class="yesno">
+                    <label><input type="radio" name="HasDependants" value="true" @(Model.HasDependants == true ? "checked" : "") /> YES</label>
+                    <label><input type="radio" name="HasDependants" value="false" @(Model.HasDependants == false ? "checked" : "") /> NO</label>
+                </div>
+                <span asp-validation-for="HasDependants" class="field-error"></span>
+            </div>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" class="btn">Continue</button>
+            <a class="btn" asp-action="Personal">Back</a>
+            <a class="btn" asp-controller="Apply" asp-action="Cancel">Cancel</a>
+        </div>
+    </form>
+</section>

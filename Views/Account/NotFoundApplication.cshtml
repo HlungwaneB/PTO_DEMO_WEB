@@ -1,0 +1,7 @@
+@* Screen 08 - Application not found. The model is the identifier that was searched for. *@
+@model string
+@{ ViewData["Title"] = "Application not found"; ViewData["Mode"] = "brand"; }
+<p style="margin:14px 0 20px;font-size:.95rem">Can not find an Application for this ID NO: <b>@Model</b></p>
+<div class="btn-row">
+    <a class="btn" asp-action="Search">Back</a>
+</div>

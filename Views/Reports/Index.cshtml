@@ -1,0 +1,30 @@
+@* Screen 39 - Reports: four tiles, Generate report, and the list with PDF / Excel exports. *@
+@model PaginatedList<Report>
+@{ ViewData["Title"] = "Reports"; }
+<div class="page-head"><h1>Reports</h1><p>View and file reports</p></div>
+<div class="tiles">
+    <div class="tile"><div class="lbl">Active</div><div class="num c-green">@ViewBag.Active</div></div>
+    <div class="tile"><div class="lbl">Expiring (30 days)</div><div class="num c-orange">@ViewBag.Expiring</div></div>
+    <div class="tile"><div class="lbl">Expired</div><div class="num c-red">@ViewBag.Expired</div></div>
+    <div class="tile"><div class="lbl">Renewed</div><div class="num c-blue">@ViewBag.Renewed</div></div>
+</div>
+<div class="toolbar"><a class="btn" asp-action="Generate">Generate report</a></div>
+<div class="table-wrap">
+    <table class="grid">
+        <thead><tr><th>Report</th><th>Period</th><th>Generated</th><th>Export</th></tr></thead>
+        <tbody>
+        @foreach (var r in Model)
+        {
+            <tr>
+                <td><a asp-action="Details" asp-route-id="@r.Id">@r.Name</a></td>
+                <td>@r.Period</td>
+                <td>@r.GeneratedAt.ToString("dd MMM yyyy")</td>
+                <td><a class="btn btn-sm" asp-action="Details" asp-route-id="@r.Id" asp-route-print="true">PDF</a>
+                    <a class="btn btn-sm" asp-action="Download" asp-route-id="@r.Id">Excel</a></td>
+            </tr>
+        }
+        @if (Model.Count == 0) { <tr><td colspan="4" class="muted">No reports yet.</td></tr> }
+        </tbody>
+    </table>
+</div>
+<partial name="_Pager" model="Model" />

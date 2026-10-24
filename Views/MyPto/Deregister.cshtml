@@ -1,0 +1,23 @@
+@* De-register (FR11): the beneficiary releases the site, or withdraws a pending application. *@
+@model DeregisterViewModel
+@{ ViewData["Title"] = "De-register"; }
+<section class="panel">
+    <div class="panel-head">@(Model.Application.Status == PtoStatus.Pending ? "Withdraw application" : "De-register PTO")</div>
+    <form asp-action="Deregister" method="post" data-once>
+        <div class="panel-body">
+            <p class="muted">@(Model.Application.Status == PtoStatus.Pending
+                ? "Your application will be cancelled."
+                : "Your PTO will end and the site will be available to other applicants.") This cannot be undone.</p>
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+            <div class="field">
+                <label asp-for="Reason">Reason</label>
+                <textarea asp-for="Reason" rows="3" maxlength="300"></textarea>
+                <span asp-validation-for="Reason" class="field-error"></span>
+            </div>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" class="btn btn-danger" data-confirm="Are you sure?">Confirm</button>
+            <a class="btn" asp-action="Application">Back</a>
+        </div>
+    </form>
+</section>

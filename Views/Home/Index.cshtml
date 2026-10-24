@@ -1,0 +1,20 @@
+@* Screen 01 - Welcome. Logo + P.T.O top left, links top right, headline on the left and the photo on the right. *@
+@{
+    ViewData["Title"] = "Welcome";
+    ViewData["Mode"] = "welcome";
+}
+<section class="hero">
+    <div class="hero-copy">
+        <div class="bar"></div>
+        <h1>Welcome to <em>P.T.O</em></h1>
+        <p>Apply for, track and renew your Permission to Occupy &mdash; and see your property on the map &mdash; quickly, securely, from any device.</p>
+        <div class="btn-row">
+            <a class="btn btn-primary btn-pill" asp-controller="Apply" asp-action="Eligibility">Apply &rarr;</a>
+            <a class="btn btn-outline btn-pill" asp-controller="Account" asp-action="Search">Track application</a>
+        </div>
+        <div class="btn-row second">
+            <a class="btn btn-dark btn-pill" asp-controller="Account" asp-action="AdminLogin">Login as admin</a>
+        </div>
+    </div>
+    <div class="hero-photo"><img src="~/images/hero.jpg" alt="Mangaung municipal building" /></div>
+</section>

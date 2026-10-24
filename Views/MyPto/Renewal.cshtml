@@ -1,0 +1,46 @@
+@* Screen 16 - Renew PTO. *@
+@model RenewalViewModel
+@{ ViewData["Title"] = "Renew PTO"; var exp = Model.Application.ExpiryDate; }
+<section class="panel">
+    <div class="panel-head">Renew PTO</div>
+    <form asp-action="Renewal" method="post" data-once>
+        <div class="panel-body">
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+            <dl class="kv" style="margin-bottom:14px">
+                <dt>Expiry date checked</dt>
+                <dd>@(exp.HasValue ? exp.Value.ToString("dd MMM yyyy") + " — " + Model.Application.DaysToExpiry + " days left" : "-")</dd>
+            </dl>
+            <div class="field">
+                <span class="label">Still living at the site</span>
+                <div class="yesno">
+                    <label><input type="radio" name="StillLiving" value="true" @(Model.StillLiving == true ? "checked" : "") /> YES</label>
+                    <label><input type="radio" name="StillLiving" value="false" @(Model.StillLiving == false ? "checked" : "") /> NO</label>
+                </div>
+                <span asp-validation-for="StillLiving" class="field-error"></span>
+            </div>
+            <div class="field">
+                <span class="label">Change in income or household</span>
+                <div class="yesno">
+                    <label><input type="radio" name="HouseholdChanged" value="true" @(Model.HouseholdChanged == true ? "checked" : "") /> YES</label>
+                    <label><input type="radio" name="HouseholdChanged" value="false" @(Model.HouseholdChanged == false ? "checked" : "") /> NO</label>
+                </div>
+                <span asp-validation-for="HouseholdChanged" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="NewIncome">New monthly income (only if changed)</label>
+                <input asp-for="NewIncome" type="number" step="0.01" min="0" />
+                <div class="hint">The system renews your PTO at once if you still live at the site and your income is still below R3 500.</div>
+                <span asp-validation-for="NewIncome" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Notes">Notes (optional)</label>
+                <input asp-for="Notes" type="text" maxlength="500" />
+                <span asp-validation-for="Notes" class="field-error"></span>
+            </div>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" class="btn">Submit renewal request</button>
+            <a class="btn" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+</section>

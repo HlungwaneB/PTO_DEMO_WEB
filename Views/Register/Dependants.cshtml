@@ -1,0 +1,76 @@
+@* Screen 19 - Dependent information. After the last dependant the wizard goes to Create password. *@
+@model DependantsPageViewModel
+@{ ViewData["Title"] = "Dependent information"; }
+<section class="panel">
+    <div class="panel-head">PTO Application</div>
+    <form asp-action="Dependants" method="post" data-once id="dependantForm">
+        <div class="panel-body">
+            <div class="sec-title">Dependent Information</div>
+
+            @if (Model.Added.Count > 0)
+            {
+                <ul class="list-added">
+                    @for (int i = 0; i < Model.Added.Count; i++)
+                    {
+                        var d = Model.Added[i];
+                        <li>
+                            <span>@d.FirstNames @d.Surname</span>
+                            <button type="submit" formaction="@Url.Action("RemoveDependant")" formmethod="post" formnovalidate name="index" value="@i" class="btn btn-sm btn-light" data-confirm="Remove this dependant?">Remove</button>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+            <div class="field">
+                <label asp-for="Form.Surname">Surname</label>
+                <input asp-for="Form.Surname" />
+                <span asp-validation-for="Form.Surname" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Form.Initials">Initials</label>
+                <input asp-for="Form.Initials" maxlength="10" />
+                <span asp-validation-for="Form.Initials" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Form.FirstNames">First name(s)</label>
+                <input asp-for="Form.FirstNames" />
+                <span asp-validation-for="Form.FirstNames" class="field-error"></span>
+            </div>
+            <div class="field">
+                <span class="label">Gender</span>
+                <div class="yesno">
+                    <label><input type="radio" asp-for="Form.Gender" value="Male" /> Male</label>
+                    <label><input type="radio" asp-for="Form.Gender" value="Female" /> Female</label>
+                </div>
+                <span asp-validation-for="Form.Gender" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Form.IdNumber">ID number / Passport</label>
+                <input asp-for="Form.IdNumber" data-idnumber inputmode="numeric" maxlength="13" />
+                <div class="hint">Optional. Leave empty for a child without an ID number.</div>
+                <span asp-validation-for="Form.IdNumber" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Form.Cellphone">Cellphone</label>
+                <input asp-for="Form.Cellphone" type="tel" />
+                <span asp-validation-for="Form.Cellphone" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Form.Email">E-mail address</label>
+                <input asp-for="Form.Email" type="email" />
+                <span asp-validation-for="Form.Email" class="field-error"></span>
+            </div>
+            <div class="field">
+                <span></span>
+                <div><button type="submit" name="command" value="add" class="btn btn-sm">+ Add another dependent</button></div>
+            </div>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" name="command" value="continue" formnovalidate class="btn">Continue</button>
+            <a class="btn" asp-controller="Apply" asp-action="Contact">Back</a>
+            <a class="btn" asp-controller="Apply" asp-action="Cancel">Cancel</a>
+        </div>
+    </form>
+</section>

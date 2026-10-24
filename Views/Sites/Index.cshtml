@@ -1,0 +1,82 @@
+@* Screen 37 - Manage sites. *@
+@model List<SiteRow>
+@{
+    ViewData["Title"] = "Sites";
+    bool isAdmin = User.IsInRole(WebConstants.RoleAdmin);
+    string current = ViewBag.Filter as string ?? "All";
+}
+<div class="page-head"><h1>Manage sites</h1><p>Add or remove available sites</p></div>
+
+<div class="toolbar stack no-print">
+    <div class="searchrow full">
+        <form method="get" class="searchbox">
+            <input type="hidden" name="filter" value="@current" />
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="11" r="6" fill="none" stroke="#111" stroke-width="2.2"/><path d="M15 16.5h6" stroke="#111" stroke-width="2.2" stroke-linecap="round"/></svg>
+            <input type="search" name="search" value="@ViewBag.Search" placeholder="Search site number or settlement" />
+            <button type="submit">Search</button>
+        </form>
+        @if (isAdmin) { <a class="btn" asp-action="Create">+ Add site</a> }
+    </div>
+    <div class="chips">
+        @foreach (var f in new[] { "All", "Available", "Occupied" })
+        {
+            <a class="chip @(f == current ? "on" : "")" asp-action="Index" asp-route-filter="@f" asp-route-search="@ViewBag.Search">@f</a>
+        }
+    </div>
+</div>
+<div class="table-wrap" style="margin-bottom:8px">
+    <table class="grid">
+        <thead><tr><th>Site no.</th><th>Settlement</th><th>Size</th><th>Status</th><th>Linked beneficiary</th>@if (isAdmin) { <th></th> }</tr></thead>
+        <tbody>
+        @foreach (var r in Model)
+        {
+            <tr>
+                <td>@r.Site.SiteNumber</td>
+                <td>@r.Site.Settlement</td>
+                <td>@r.Site.SizeSqm m&sup2;</td>
+                <td><partial name="_StatusBadge" model="@(r.Status == "Occupied" ? "Active" : r.Status)" /></td>
+                <td>@(r.LinkedBeneficiary ?? "\u2014")</td>
+                @if (isAdmin)
+                {
+                    <td>
+                        <form asp-action="Remove" method="post" style="margin:0;text-align:right">
+                            <input type="hidden" name="id" value="@r.Site.Id" />
+                            <button class="btn btn-sm" type="submit" disabled="@(r.Status != "Available")" data-confirm="Remove site @r.Site.SiteNumber?">Remove</button>
+                        </form>
+                    </td>
+                }
+            </tr>
+        }
+        @if (Model.Count == 0) { <tr><td colspan="6" class="muted">No sites found.</td></tr> }
+        </tbody>
+    </table>
+</div>
+
+@{ var areas = ViewBag.Areas as List<AreaRow> ?? new List<AreaRow>(); }
+<h2 class="h3">Areas: limited sites and application target</h2>
+<p class="muted small" style="margin:-6px 0 12px">The system waits until an area has received its target number of applications. Then it ranks the applicants
+   (lower income, veteran, elderly and dependants score higher) and gives the free sites to the highest scores. The rest are rejected.</p>
+<div class="table-wrap">
+    <table class="grid">
+        <thead><tr><th>Area</th><th>Sites</th><th>Free</th><th>Waiting</th><th>Target (applications before the system decides)</th></tr></thead>
+        <tbody>
+        @foreach (var a in areas)
+        {
+            <tr>
+                <td>@a.Area.Name</td><td>@a.TotalSites</td><td>@a.FreeSites</td><td>@a.Pending</td>
+                <td>
+                    @if (User.IsInRole(WebConstants.RoleAdmin))
+                    {
+                        <form asp-action="SetTarget" method="post" class="doc-upload">
+                            <input type="hidden" name="areaId" value="@a.Area.Id" />
+                            <input type="number" name="target" value="@a.Area.ApplicationTarget" min="1" max="1000" class="input" style="width:90px;height:26px" />
+                            <button class="btn btn-sm" type="submit">Save</button>
+                        </form>
+                    }
+                    else { @a.Area.ApplicationTarget }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

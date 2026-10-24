@@ -1,0 +1,23 @@
+@* Previous / Next buttons. Model = the PaginatedList. ViewBag.PagerAction / ViewBag.PagerRoute are not needed:
+   links keep the current query string (filter + search). *@
+@model dynamic
+@{
+    int index = Model.PageIndex;
+    int total = Model.TotalPages;
+    var q = Context.Request.Query;
+    Func<int, string> url = p =>
+    {
+        var parts = new List<string>();
+        foreach (var kv in q) { if (kv.Key != "page") parts.Add(Uri.EscapeDataString(kv.Key) + "=" + Uri.EscapeDataString(kv.Value.ToString())); }
+        parts.Add("page=" + p);
+        return Context.Request.Path + "?" + string.Join("&", parts);
+    };
+}
+@if (total > 1)
+{
+    <div class="pager no-print">
+        @if (index > 1) { <a class="btn btn-sm" href="@url(index - 1)">&laquo; Previous</a> }
+        <span class="muted small">Page @index of @total</span>
+        @if (index < total) { <a class="btn btn-sm" href="@url(index + 1)">Next &raquo;</a> }
+    </div>
+}

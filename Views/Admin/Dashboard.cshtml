@@ -1,0 +1,51 @@
+@* Screen 30 - Dashboard (FR14). Eight tiles like the wireframe, then what needs attention, then the limited areas. *@
+@model DashboardViewModel
+@{ ViewData["Title"] = "Dashboard"; }
+<div class="page-head"><h1>Dashboard</h1><p>Overview of PTO information</p></div>
+<div class="tiles">
+    <div class="tile"><div class="lbl">Beneficiaries</div><div class="num">@Model.Beneficiaries</div></div>
+    <div class="tile"><div class="lbl">Sites</div><div class="num">@Model.Sites</div></div>
+    <div class="tile"><div class="lbl">Active PTOs</div><div class="num c-green">@Model.Active</div></div>
+    <div class="tile"><div class="lbl">Approaching expiry</div><div class="num c-orange">@Model.Expiring</div></div>
+    <div class="tile"><div class="lbl">Expired</div><div class="num c-red">@Model.Expired</div></div>
+    <div class="tile"><div class="lbl">Renewed</div><div class="num c-blue">@Model.Renewed</div></div>
+    <div class="tile"><div class="lbl">De-registered</div><div class="num c-grey">@Model.Deregistered</div></div>
+    <div class="tile"><div class="lbl">Pending applications</div><div class="num c-amber">@Model.Pending</div></div>
+</div>
+
+<h2 class="h3">Needs attention</h2>
+<div class="table-wrap" style="margin-bottom:22px">
+    <table class="grid">
+        <thead><tr><th>Applicant</th><th>Site</th><th>Settlement</th><th>Submitted</th><th>Status</th></tr></thead>
+        <tbody>
+        @foreach (var a in Model.NeedsAttention)
+        {
+            <tr>
+                <td><a asp-action="Detail" asp-route-id="@a.Id">@a.Beneficiary.FullName</a></td>
+                <td>@(a.Site != null ? a.Site.SiteNumber : "-")</td>
+                <td>@a.Settlement</td>
+                <td>@(a.SubmittedAt.HasValue ? (a.SubmittedAt.Value.Date == DateTime.Today ? "Today" : a.SubmittedAt.Value.Date == DateTime.Today.AddDays(-1) ? "Yesterday" : a.SubmittedAt.Value.ToString("dd MMM yyyy")) : "-")</td>
+                <td><partial name="_StatusBadge" model="a.Status" /></td>
+            </tr>
+        }
+        @if (!Model.NeedsAttention.Any()) { <tr><td colspan="5" class="muted">Nothing needs attention.</td></tr> }
+        </tbody>
+    </table>
+</div>
+
+<h2 class="h3">Areas: limited sites</h2>
+<div class="table-wrap">
+    <table class="grid">
+        <thead><tr><th>Area</th><th>Sites</th><th>Free</th><th>Waiting applications</th><th>System decides when</th></tr></thead>
+        <tbody>
+        @foreach (var a in Model.Areas)
+        {
+            <tr>
+                <td>@a.Area.Name</td><td>@a.TotalSites</td>
+                <td>@(a.FreeSites == 0 ? "Full" : a.FreeSites.ToString())</td>
+                <td>@a.Pending</td><td>@a.Area.ApplicationTarget applications received</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,34 @@
+@* Screen 18 - Update Personal Information. Name and ID number cannot be changed here. *@
+@model ProfileViewModel
+@{ ViewData["Title"] = "My information"; }
+<section class="panel">
+    <div class="panel-head">Update Personal Information</div>
+    <form asp-action="Profile" method="post" data-once>
+        <div class="panel-body">
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+            <div class="field">
+                <label asp-for="Cellphone">Cellphone</label>
+                <input asp-for="Cellphone" type="tel" />
+                <span asp-validation-for="Cellphone" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Email">E-mail address</label>
+                <input asp-for="Email" type="email" />
+                <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Address">Address</label>
+                <input asp-for="Address" />
+                <span asp-validation-for="Address" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label>Number of dependants</label>
+                <input type="text" value="@Model.DependantsCount" readonly />
+            </div>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" class="btn">Save changes</button>
+            <a class="btn" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+</section>

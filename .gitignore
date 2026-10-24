@@ -1,0 +1,25 @@
+## Visual Studio / .NET
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.rsuser
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.log
+.idea/
+.vscode/
+
+## SECRETS - never commit these
+appsettings.Local.json
+appsettings.Secrets.json
+secrets.json
+.env
+
+## Uploaded documents contain ID numbers: never commit them
+App_Data/
+wwwroot/uploads/

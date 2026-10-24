@@ -1,0 +1,23 @@
+@{ ViewData["Title"] = "About"; }
+<section class="panel">
+    <div class="panel-head">About myPTO</div>
+    <div class="panel-body">
+        <p>A Permission To Occupy (PTO) is the official document that lets a household live on a municipal site
+           while the formal title process is completed. myPTO lets Mangaung residents apply online, upload their
+           documents, track the application and request a renewal.</p>
+        <p>A PTO is valid for @WebConstants.PtoValidityMonths months. We send a reminder @WebConstants.ExpiryWarningDays days
+           before it expires so you can renew in time.</p>
+        <div class="section-title">How is the decision made?</div>
+        <p>Sites are limited in every area. Nobody at the municipality approves applications by hand: the system verifies your documents
+           and, when the area has received enough applications, it ranks the applicants and gives the free sites to the most needy and most
+           qualifying. Lower income, being a military veteran, being elderly and having dependants all raise your score. If your score is
+           too low or the sites are full you are rejected and can apply for another area. You renew or de-register your own PTO.</p>
+        <div class="section-title">Who can apply?</div>
+        <ul>
+            <li>Household income below R@(WebConstants.MaxMonthlyIncome.ToString("N0")) per month</li>
+            <li>South African citizen</li>
+            <li>First-time home owner and first-time subsidy recipient</li>
+            <li>Over 21 years old</li>
+        </ul>
+    </div>
+</section>

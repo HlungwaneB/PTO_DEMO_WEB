@@ -1,0 +1,27 @@
+@* After a rejection the applicant can apply for another area; the documents are kept. *@
+@model ReapplyViewModel
+@{ ViewData["Title"] = "Apply for another area"; }
+<section class="panel">
+    <div class="panel-head">Apply for another area</div>
+    <form asp-action="Reapply" method="post" data-once>
+        <div class="panel-body">
+            <div class="@(Model.Application.Status == PtoStatus.Rejected ? "alert-err" : "alert-warn")">@(Model.Application.Status == PtoStatus.Rejected ? Model.Application.RejectReason : Model.Application.DeregisterReason)</div>
+            <p class="muted">Your documents are already verified. Choose an area that still has free sites.</p>
+            <div class="field">
+                <label asp-for="Settlement">Area</label>
+                <select asp-for="Settlement">
+                    <option value="">Choose an area</option>
+                    @foreach (var a in Model.Areas)
+                    {
+                        <option value="@a.Area.Name">@a.Area.Name (@a.FreeSites free sites)</option>
+                    }
+                </select>
+                <span asp-validation-for="Settlement" class="field-error"></span>
+            </div>
+        </div>
+        <div class="panel-foot">
+            <button type="submit" class="btn">Continue to review</button>
+            <a class="btn" asp-action="Application">Back</a>
+        </div>
+    </form>
+</section>
