@@ -16,6 +16,7 @@ System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globaliz
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews(options => options.Filters.AddService<CustomExceptionFilter>());
+builder.Services.AddSingleton<IEmailSender, PTO_Management_System.Services.EmailSender>(); builder.Services.AddMemoryCache();
 
 // ---------- Database: Supabase PostgreSQL through Entity Framework Core ----------
 builder.Services.AddDbContext<PtoDbContext>(options =>

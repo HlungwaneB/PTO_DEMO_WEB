@@ -64,6 +64,7 @@ namespace PTO_Management_System.Models
         public string Kind { get; set; } = "info";
         public DateTime DateSent { get; set; }
         public bool IsRead { get; set; }
+        public DateTime? EmailSentAt { get; set; }
     }
 
     /// <summary>FR10 - a beneficiary asks for the PTO to be renewed.</summary>

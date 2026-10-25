@@ -29,8 +29,7 @@ namespace PTO_Management_System.Repositories
 
         public async Task InitializeAsync()
         {
-            // Creates every table (Identity + PTO) in Supabase if the database is still empty
-            await _context.Database.EnsureCreatedAsync();
+            
 
             // 1. Roles (Tutorial Part 2: "Admin" and "User", plus the PTO Officer from the SRS)
             foreach (var role in new[] { WebConstants.RoleAdmin, WebConstants.RoleOfficer, WebConstants.RoleUser })

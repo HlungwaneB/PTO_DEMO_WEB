@@ -28,6 +28,17 @@ namespace PTO_Management_System.Data
         public DbSet<RenewalRequest> RenewalRequests { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        private static string ToSnakeCase(string name)
+        {
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < name.Length; i++)
+            {
+                char c = name[i];
+                if (char.IsUpper(c) && i > 0 && !char.IsUpper(name[i - 1])) sb.Append('_');
+                sb.Append(char.ToLowerInvariant(c));
+            }
+            return sb.ToString();
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -73,6 +84,14 @@ namespace PTO_Management_System.Data
             modelBuilder.Entity<PtoApplication>()
                 .HasOne(a => a.Site).WithMany().HasForeignKey(a => a.SiteId)
                 .OnDelete(DeleteBehavior.SetNull);
+            // Column names in snake_case so they match the Supabase tables
+            foreach (var entity in modelBuilder.Model.GetEntityTypes()
+                         .Where(e => e.ClrType.Namespace == "PTO_Management_System.Models"))
+            {
+                foreach (var property in entity.GetProperties())
+                    property.SetColumnName(ToSnakeCase(property.Name));
+            }
+            modelBuilder.Entity<AuditLog>().Property(a => a.When).HasColumnName("logged_at");
         }
     }
 }

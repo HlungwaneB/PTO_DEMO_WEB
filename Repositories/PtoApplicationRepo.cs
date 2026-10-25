@@ -136,8 +136,7 @@ namespace PTO_Management_System.Repositories
         private void RunAllocation(Area area)
         {
             // Lock the area row (PostgreSQL) so only one allocation round per area runs at a time
-            _context.Database.ExecuteSqlInterpolated($"select 1 from area where \"Id\" = {area.Id} for update");
-
+            _context.Database.ExecuteSqlInterpolated($"select 1 from area where id = {area.Id} for update");
             var pending = _context.PtoApplications
                 .Where(a => a.Status == PtoStatus.Pending && a.Settlement == area.Name).ToList();
             if (pending.Count < area.ApplicationTarget) return; // still Pending: waiting for more applications

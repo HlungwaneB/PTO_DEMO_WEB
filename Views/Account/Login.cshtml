@@ -17,7 +17,7 @@
             <input asp-for="Password" autocomplete="current-password" />
             <span asp-validation-for="Password" class="field-error"></span>
         </div>
-        <a class="forgot" asp-controller="Home" asp-action="Contact">Forgot Password</a>
+        <a class="forgot" asp-controller="Account" asp-action="ForgotPassword">Forgot Password</a>
         <button type="submit" class="login-btn">LOG IN</button>
     </form>
     <p class="alt">Haven't you applied yet? <a asp-controller="Apply" asp-action="Eligibility">Apply</a></p>

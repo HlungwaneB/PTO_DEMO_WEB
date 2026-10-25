@@ -41,6 +41,28 @@ namespace PTO_Management_System.Repositories
                 string target = null;
                 if (daysLeft < 0) target = PtoStatus.Expired;
                 else if (daysLeft <= WebConstants.ExpiryWarningDays) target = PtoStatus.Expiring;
+                // Extra reminders while Expiring: 7, 3 and 1 day(s) before expiry (once per day)
+                if (app.Status == PtoStatus.Expiring && (daysLeft == 7 || daysLeft == 3 || daysLeft == 1))
+                {
+                    string reminderTitle = "Expiry reminder: " + daysLeft + (daysLeft == 1 ? " day left" : " days left");
+                    bool already = _context.Notifications.Any(n => n.BeneficiaryId == app.BeneficiaryId
+                                                                && n.Title == reminderTitle && n.DateSent >= today);
+                    if (!already)
+                    {
+                        _context.Notifications.Add(new Notification
+                        {
+                            BeneficiaryId = app.BeneficiaryId,
+                            Title = reminderTitle,
+                            Message = "Your PTO expires on " + app.ExpiryDate.Value.ToString("dd MMM yyyy")
+                                      + ". Request a renewal to stay covered.",
+                            Kind = "warning",
+                            DateSent = DateTime.UtcNow
+                        });
+                        changed++;
+                    }
+                }
+
+
 
                 if (target == null || target == app.Status) continue;
 
