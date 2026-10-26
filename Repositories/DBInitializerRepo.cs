@@ -44,7 +44,7 @@ namespace PTO_Management_System.Repositories
             await EnsureStaffUser(adminEmail, adminPassword, WebConstants.RoleAdmin);
 
             // 3. A PTO Officer for testing the officer role
-            await EnsureStaffUser("officer@gmail.com", adminPassword, WebConstants.RoleOfficer);
+           // await EnsureStaffUser("officer@gmail.com", adminPassword, WebConstants.RoleOfficer);
 
             // 4. Sample sites (limited per area)
             if (!_context.Sites.Any())

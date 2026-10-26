@@ -2,16 +2,16 @@
 @model LoginViewModel
 @{ ViewData["Title"] = "Search for your PTO"; ViewData["Mode"] = "brand"; }
 <div class="page-head"><h1>Search for your PTO</h1></div>
-<div class="info-bar">Search using ID number &amp; Password.<br /><b>Required items marked with a *</b></div>
+<div class="info-bar">Search using ID number &amp; Password.<br /><b>Required items marked with a <span class="req">*</span></b></div>
 <form asp-action="Search" method="post" data-once>
     <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
     <div class="field">
-        <label asp-for="Identifier">ID number:*</label>
-        <input asp-for="Identifier" data-idnumber inputmode="numeric" maxlength="13" />
+        <label asp-for="Identifier">ID number:<span class="req">*</span></label>      
+  <input asp-for="Identifier" data-idnumber inputmode="numeric" maxlength="13" />
         <span asp-validation-for="Identifier" class="field-error"></span>
     </div>
     <div class="field">
-        <label asp-for="Password">Password:*</label>
+        <label asp-for="Password">Password:<span class="req">*</span></label>      
         <input asp-for="Password" autocomplete="current-password" />
         <span asp-validation-for="Password" class="field-error"></span>
     </div>

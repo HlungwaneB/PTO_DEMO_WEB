@@ -6,7 +6,7 @@ using PTO_Management_System.Models;
 namespace PTO_Management_System.Controllers
 {
     /// <summary>Screen 33 (Sites) and 34 (Add site). Officers can look, only the administrator can change.</summary>
-    [Authorize(Roles = WebConstants.RoleAdmin + "," + WebConstants.RoleOfficer)]
+    [Authorize(Roles = WebConstants.RoleAdmin)]
     public class SitesController : Controller
     {
         private readonly ISite _sites;

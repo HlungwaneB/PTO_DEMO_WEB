@@ -52,14 +52,21 @@ h1, h2, h3 { margin: 0; }
 /* ---------- header ---------- */
 .site-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 28px; background: #fff; min-height: 55px; }
 .brand { display: flex; align-items: center; text-decoration: none; color: var(--ink); }
-.brand-icon { display: block; width: 26px; height: 34px; }
+.brand-icon {
+    display: block;
+    height: 40px;
+    width: auto;
+}
 .brand-myPTO { display: flex; align-items: center; gap: 10px; }
 .brand-myPTO .mp { font-size: 2.1rem; font-weight: 800; letter-spacing: -.5px; line-height: 1; }
 .brand-myPTO .mp i { font-style: normal; font-weight: 600; color: var(--brand); font-size: 1.45rem; margin-right: 1px; }
 .brand-myPTO .sep { width: 1px; height: 40px; background: #999; margin: 0 2px; }
 .brand-myPTO .mg { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: .68rem; letter-spacing: .3px; }
-.brand-myPTO .mg svg { width: 22px; height: 34px; }
-.brand-pto { display: flex; align-items: center; gap: 14px; font-size: 1.4rem; font-weight: 500; }
+    .brand-myPTO .mg img {
+        height: 40px;
+        width: auto;
+    }
+    .brand-pto { display: flex; align-items: center; gap: 14px; font-size: 1.4rem; font-weight: 500; }
 .brand-pto img { width: 56px; height: 56px; object-fit: contain; }
 .header-user { display: flex; align-items: center; gap: 14px; font-size: .8rem; }
 .header-user .out { color: var(--brand); font-weight: 600; background: none; border: 0; padding: 0; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
@@ -184,7 +191,6 @@ h1, h2, h3 { margin: 0; }
 .welcome-nav a { color: #222; text-decoration: none; }
 .welcome-nav a.login-pill { background: var(--brand); color: #fff; border-radius: 999px; padding: 8px 18px; font-weight: 600; }
 .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; padding: 28px 80px 40px; max-width: 1440px; margin: 0 auto; }
-.hero-copy .bar { width: 48px; height: 4px; background: var(--olive); margin-bottom: 20px; }
 .hero-copy h1 { font-size: 3.4rem; font-weight: 800; line-height: 1.12; letter-spacing: -1px; }
 .hero-copy h1 em { display: block; font-style: normal; color: var(--brand); margin-top: 28px; }
 .hero-copy p { color: #555; font-size: 1rem; max-width: 500px; margin: 28px 0 20px; }
@@ -195,10 +201,26 @@ h1, h2, h3 { margin: 0; }
 
 /* ---------- login / admin login card ---------- */
 .auth-back { display: inline-flex; align-items: center; gap: 6px; padding: 24px 24px 0; color: var(--brand); text-decoration: none; font-size: 1.05rem; }
-.auth-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px 16px 120px; }
-.auth-card { width: 420px; max-width: 100%; background: #fff; border: 1px solid #777; border-radius: 28px; padding: 22px 26px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; }
-.auth-card .bars { width: 34px; height: 42px; margin: 0 auto 2px; display: block; }
-.auth-card h1 { font-size: 1.55rem; font-weight: 700; margin-bottom: 10px; }
+.auth-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px 120px;
+}
+
+    .auth-wrap .flash {
+        margin: 0 0 14px;
+        max-width: 420px;
+    }.auth-card { width: 420px; max-width: 100%; background: #fff; border: 1px solid #777; border-radius: 28px; padding: 22px 26px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.22); text-align: center; }
+    .auth-card .bars {
+        height: 64px;
+        width: auto;
+        margin: 0 auto 4px;
+        display: block;
+    }
+    .auth-card h1 { font-size: 1.55rem; font-weight: 700; margin-bottom: 10px; }
 .auth-card .af { text-align: left; margin-bottom: 10px; }
 .auth-card .af label { display: block; font-size: .65rem; font-weight: 700; margin-bottom: 8px; }
 .auth-card .af input { width: 100%; border: 0; border-bottom: 1px solid #333; background: transparent; padding: 4px 0 6px; font: inherit; font-size: .9rem; border-radius: 0; }
@@ -362,3 +384,10 @@ table.grid tr:hover td { background: #fffaf5; }
 .site-footer.slim { min-height: 0; padding: 10px 28px; }
 .info-bar { background: #DCDCDC; padding: 8px 12px; font-size: .68rem; margin-bottom: 14px; line-height: 1.35; }
 .mode-brand .field, .mode-app .site-main > form > .field { max-width: 560px; }
+
+
+
+.req {
+    color: var(--red, #d9534f);
+    font-weight: 700;
+}

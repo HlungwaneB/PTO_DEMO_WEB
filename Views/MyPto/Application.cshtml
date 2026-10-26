@@ -42,8 +42,7 @@
 {
     var area = (AreaRow)ViewBag.Area;
     <div class="alert-info">
-        Your application is waiting. The system decides automatically when @Model.Settlement has received
-        @area.Area.ApplicationTarget applications (now @area.Pending). There are @area.FreeSites free sites.
+        Your application is waiting. 
     </div>
 }
 @if (Model.Status == PtoStatus.Rejected)

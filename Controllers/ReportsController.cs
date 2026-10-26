@@ -8,7 +8,7 @@ using PTO_Management_System.Repositories;
 namespace PTO_Management_System.Controllers
 {
     /// <summary>Screens 36, 37 and 38: report list, generate a report, view/print/download it (FR13).</summary>
-    [Authorize(Roles = WebConstants.RoleAdmin + "," + WebConstants.RoleOfficer)]
+    [Authorize(Roles = WebConstants.RoleAdmin)]
     public class ReportsController : Controller
     {
         private readonly IReport _reports;

@@ -9,7 +9,7 @@ namespace PTO_Management_System.Controllers
     /// Administrator / officer screens (VIEW ONLY): 30 Dashboard, 31 Applications, 32 PTO records, 35 PTO detail.
     /// The system approves and rejects applications by itself; the administrator monitors and manages sites, areas and reports.
     /// </summary>
-    [Authorize(Roles = WebConstants.RoleAdmin + "," + WebConstants.RoleOfficer)]
+    [Authorize(Roles = WebConstants.RoleAdmin)]
     public class AdminController : Controller
     {
         private const int PageSize = 8;

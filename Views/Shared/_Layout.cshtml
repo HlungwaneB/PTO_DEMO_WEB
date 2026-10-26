@@ -69,8 +69,7 @@ else if (mode == "brand")
             <span class="mp"><i>my</i>PTO</span>
             <span class="sep"></span>
             <span class="mg">
-                <svg viewBox="0 0 28 36" aria-hidden="true"><rect x="0" y="14" width="7" height="22" rx="3" fill="#F26B21"/><rect x="10" y="0" width="7" height="36" rx="3" fill="#111"/><rect x="20" y="8" width="7" height="28" rx="3" fill="#7A9A0E"/></svg>
-                MANGAUNG
+                    <img class="mg-logo" src="~/images/mangaung-mark.png" alt="" />  MANGAUNG
             </span>
         </a>
         @if (signedIn && !isStaff)
@@ -85,7 +84,7 @@ else
         @if (isStaff || signedIn)
         {
             <a class="brand" asp-controller="@(isStaff ? "Admin" : "MyPto")" asp-action="@(isStaff ? "Dashboard" : "Index")" aria-label="Home">
-                <svg class="brand-icon" viewBox="0 0 28 36" aria-hidden="true"><rect x="0" y="14" width="7" height="22" rx="3" fill="#F26B21"/><rect x="10" y="0" width="7" height="36" rx="3" fill="#111"/><rect x="20" y="8" width="7" height="28" rx="3" fill="#7A9A0E"/></svg>
+                    <img class="brand-icon" src="~/images/mangaung-mark.png" alt="Mangaung" />
             </a>
             <div class="header-user">
                 @if (!isStaff)
@@ -112,8 +111,7 @@ else
                 <span class="mp"><i>my</i>PTO</span>
                 <span class="sep"></span>
                 <span class="mg">
-                    <svg viewBox="0 0 28 36" aria-hidden="true"><rect x="0" y="14" width="7" height="22" rx="3" fill="#F26B21"/><rect x="10" y="0" width="7" height="36" rx="3" fill="#111"/><rect x="20" y="8" width="7" height="28" rx="3" fill="#7A9A0E"/></svg>
-                    MANGAUNG
+                        <img class="mg-logo" src="~/images/mangaung-mark.png" alt="" />  MANGAUNG
                 </span>
             </a>
         }
@@ -177,7 +175,7 @@ else
     </main>
 }
 
-@if (mode == "brand")
+    @if (mode == "brand" || mode == "welcome")
 {
     <footer class="site-footer">
         <span>&copy; @DateTime.Now.Year Mangaung Metropolitan Municipality &middot; Permission To Occupy</span>
