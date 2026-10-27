@@ -1,10 +1,11 @@
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using PTO_Management_System;
 using PTO_Management_System.Data;
 using PTO_Management_System.Interfaces;
 using PTO_Management_System.Models;
+using PTO_Management_System.Services;
 
 // Npgsql (PostgreSQL) is strict about DateTime kinds; this switch keeps simple DateTime values working.
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -22,26 +23,29 @@ builder.Services.AddSingleton<IEmailSender, PTO_Management_System.Services.Email
 builder.Services.AddDbContext<PtoDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ---------- Authentication + roles (ASP.NET Core Identity) ----------
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
-{
-    options.SignIn.RequireConfirmedAccount = false;
-    options.User.RequireUniqueEmail = true;
+// ---------- Authentication: Supabase Auth (the same logins as the Flutter app) ----------
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
 
-    // Password rules (FR1 / 7.1 Security)
-    options.Password.RequiredLength = 8;
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = true;
-    options.Password.RequireNonAlphanumeric = false;
-
-    // Lock the account for 10 minutes after 5 wrong passwords
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
-    options.Lockout.AllowedForNewUsers = true;
-})
-.AddEntityFrameworkStores<PtoDbContext>()
-.AddDefaultTokenProviders();
+        options.Events.OnRedirectToLogin = context =>
+        {
+            var path = context.Request.Path;
+            bool staffArea = path.StartsWithSegments("/Admin") || path.StartsWithSegments("/Sites")
+                          || path.StartsWithSegments("/Reports") || path.StartsWithSegments("/Audit");
+            var target = staffArea ? "/Account/AdminLogin" : "/Account/Login";
+            context.Response.Redirect(target + "?ReturnUrl=" + Uri.EscapeDataString(context.Request.Path + context.Request.QueryString));
+            return Task.CompletedTask;
+        };
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddScoped<ISupabaseAuth, SupabaseAuthService>();
+builder.Services.AddScoped<SessionService>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -76,11 +80,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddScoped<CustomExceptionFilter>();
 
-//Register the client
-builder.Services.AddScoped(_ => new Supabase.Client(
-    builder.Configuration["Supabase:Url"],
-    builder.Configuration["Supabase:Key"],
-    new Supabase.SupabaseOptions { AutoRefreshToken = true, AutoConnectRealtime = false }));
+builder.Services.AddScoped<IFileStorage, PTO_Management_System.Storage.SupabaseFileStorage>();
 
 // ---------- Repositories (Interfaces/ + Repositories/ pattern from the CUT project) ----------
 // Instead of one AddScoped line per repository, every class in the Repositories namespace is registered

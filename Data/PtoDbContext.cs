@@ -11,7 +11,7 @@ namespace PTO_Management_System.Data
     /// In the CUT project there were two contexts (SQLiteDBContext + LoginDBContext); with one shared
     /// database it is simpler and safer to keep a single context.
     /// </summary>
-    public class PtoDbContext : IdentityDbContext<IdentityUser>
+    public class PtoDbContext : DbContext
     {
         public PtoDbContext(DbContextOptions<PtoDbContext> options) : base(options)
         {
@@ -28,6 +28,7 @@ namespace PTO_Management_System.Data
         public DbSet<RenewalRequest> RenewalRequests { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<Profile> Profiles { get; set; }
         private static string ToSnakeCase(string name)
         {
             var sb = new System.Text.StringBuilder();
@@ -42,9 +43,10 @@ namespace PTO_Management_System.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder); // REQUIRED: builds the Identity tables
+            base.OnModelCreating(modelBuilder);
 
             // Table names in lower case (friendlier in the Supabase table editor)
+            modelBuilder.Entity<Profile>().ToTable("profiles");
             modelBuilder.Entity<Beneficiary>().ToTable("beneficiary");
             modelBuilder.Entity<Dependant>().ToTable("dependant");
             modelBuilder.Entity<Site>().ToTable("site");

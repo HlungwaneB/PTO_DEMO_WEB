@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PTO_Management_System.Interfaces;
 
@@ -16,16 +16,16 @@ namespace PTO_Management_System.Controllers
         private readonly IPtoApplication _applications;
         private readonly IBeneficiary _beneficiaries;
         private readonly IFileStorage _storage;
-        private readonly UserManager<IdentityUser> _userManager;
+        
 
         public DocumentsController(IPtoDocument documents, IPtoApplication applications, IBeneficiary beneficiaries,
-            IFileStorage storage, UserManager<IdentityUser> userManager)
+            IFileStorage storage)
         {
             _documents = documents;
             _applications = applications;
             _beneficiaries = beneficiaries;
             _storage = storage;
-            _userManager = userManager;
+            
         }
 
         public async Task<IActionResult> Download(int id)
@@ -33,10 +33,10 @@ namespace PTO_Management_System.Controllers
             var document = _documents.GetById(id);
             if (document == null) return NotFound();
 
-            bool isStaff = User.IsInRole(WebConstants.RoleAdmin) || User.IsInRole(WebConstants.RoleOfficer);
+            bool isStaff = User.IsInRole(WebConstants.RoleAdmin);
             if (!isStaff)
             {
-                var me = _beneficiaries.ByUserId(_userManager.GetUserId(User));
+                var me = _beneficiaries.ByUserId(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var application = _applications.GetById(document.PtoApplicationId);
                 if (me == null || application == null || application.BeneficiaryId != me.Id)
                     return Forbid();
@@ -46,6 +46,7 @@ namespace PTO_Management_System.Controllers
             if (stream == null) return NotFound();
 
             return File(stream, document.ContentType ?? "application/octet-stream", document.OriginalFileName);
+
         }
     }
 }

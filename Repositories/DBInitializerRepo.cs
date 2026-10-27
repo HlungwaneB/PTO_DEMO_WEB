@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Identity;
 using PTO_Management_System.Data;
 using PTO_Management_System.Interfaces;
 using PTO_Management_System.Models;
@@ -6,47 +5,22 @@ using PTO_Management_System.Models;
 namespace PTO_Management_System.Repositories
 {
     /// <summary>
-    /// Same idea as DBInitializerRepo in the CUT project: create the database tables and seed default data.
-    /// Runs automatically when the site starts (see Program.cs) and again from the admin-only Database link.
+    /// Seeds the sample sites and areas when those tables are empty (the Supabase setup script already
+    /// does this). Logins are NOT created here any more: they live in Supabase Auth, and the administrator
+    /// is created in the Supabase dashboard (Authentication > Users) and given the admin role in profiles.
     /// </summary>
     public class DBInitializerRepo : IDBInitializer
     {
         private readonly PtoDbContext _context;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<DBInitializerRepo> _logger;
 
-        public DBInitializerRepo(PtoDbContext context, RoleManager<IdentityRole> roleManager,
-            UserManager<IdentityUser> userManager, IConfiguration configuration, ILogger<DBInitializerRepo> logger)
+        public DBInitializerRepo(PtoDbContext context)
         {
             _context = context;
-            _roleManager = roleManager;
-            _userManager = userManager;
-            _configuration = configuration;
-            _logger = logger;
         }
 
         public async Task InitializeAsync()
         {
-            
-
-            // 1. Roles (Tutorial Part 2: "Admin" and "User", plus the PTO Officer from the SRS)
-            foreach (var role in new[] { WebConstants.RoleAdmin, WebConstants.RoleOfficer, WebConstants.RoleUser })
-            {
-                if (!await _roleManager.RoleExistsAsync(role))
-                    await _roleManager.CreateAsync(new IdentityRole(role));
-            }
-
-            // 2. Default System Administrator (change the password in appsettings / user-secrets)
-            string adminEmail = _configuration["SeedAdmin:Email"] ?? "admin@gmail.com";
-            string adminPassword = _configuration["SeedAdmin:Password"] ?? "Test!123";
-            await EnsureStaffUser(adminEmail, adminPassword, WebConstants.RoleAdmin);
-
-            // 3. A PTO Officer for testing the officer role
-           // await EnsureStaffUser("officer@gmail.com", adminPassword, WebConstants.RoleOfficer);
-
-            // 4. Sample sites (limited per area)
+            // Sample sites (limited per area), only when the table is empty
             if (!_context.Sites.Any())
             {
                 var sites = new List<Site>
@@ -64,7 +38,7 @@ namespace PTO_Management_System.Repositories
                 await _context.SaveChangesAsync();
             }
 
-            // 5. Areas. Sites are LIMITED per area; the system decides once the application target is reached.
+            // Areas. Sites are LIMITED per area; the system decides once the application target is reached.
             //    (Botshabelo: 4 sites, decision after 6 applications ...). The administrator can change the targets.
             var targets = new Dictionary<string, int> { { "Botshabelo", 6 }, { "Thaba Nchu", 3 }, { "Mangweni Z1", 3 } };
             var known = _context.Areas.Select(a => a.Name).ToList();
@@ -74,24 +48,6 @@ namespace PTO_Management_System.Repositories
                 _context.Areas.Add(new Area { Name = settlement, ApplicationTarget = targets.ContainsKey(settlement) ? targets[settlement] : 5 });
             }
             await _context.SaveChangesAsync();
-        }
-
-        private async Task EnsureStaffUser(string email, string password, string role)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                user = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
-                var result = await _userManager.CreateAsync(user, password);
-                if (!result.Succeeded)
-                {
-                    _logger.LogError("Could not create {Email}: {Errors}", email,
-                        string.Join("; ", result.Errors.Select(e => e.Description)));
-                    return;
-                }
-            }
-            if (!await _userManager.IsInRoleAsync(user, role))
-                await _userManager.AddToRoleAsync(user, role);
         }
 
         private static Site NewSite(string number, string settlement, int size, string gps)

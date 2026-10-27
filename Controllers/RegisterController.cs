@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PTO_Management_System.Interfaces;
 using PTO_Management_System.Models;
 using PTO_Management_System.Validation;
+using PTO_Management_System.Services;
 
 namespace PTO_Management_System.Controllers
 {
@@ -20,20 +21,20 @@ namespace PTO_Management_System.Controllers
         private readonly IPtoApplication _applications;
         private readonly IPtoDocument _documents;
         private readonly IFileStorage _storage;
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly ISupabaseAuth _auth;
+        private readonly SessionService _session;
         private readonly ILogger<RegisterController> _logger;
 
         public RegisterController(IBeneficiary beneficiaries, IPtoApplication applications, IPtoDocument documents,
-            IFileStorage storage, UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager,
+            IFileStorage storage, ISupabaseAuth auth, SessionService session,
             ILogger<RegisterController> logger)
         {
             _beneficiaries = beneficiaries;
             _applications = applications;
             _documents = documents;
             _storage = storage;
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _auth = auth;
+            _session = session;
             _logger = logger;
         }
 
@@ -165,24 +166,41 @@ namespace PTO_Management_System.Controllers
                 return View(model);
             }
 
-            // 1. Create the login: user name = ID number, password = the one just created (stored hashed by Identity)
-            var user = new IdentityUser
+            // 1. Create the login in Supabase Auth (the e-mail + the password just created).
+            var passwordProblem = PasswordRules.Check(model.Password);
+            if (passwordProblem != null)
             {
-                UserName = state.Personal.IdNumber,
-                Email = state.Contact.Email,
-                PhoneNumber = state.Contact.Cellphone
-            };
-            var result = await _userManager.CreateAsync(user, model.Password);
-            if (!result.Succeeded)
-            {
-                foreach (var error in result.Errors) ModelState.AddModelError("", error.Description);
+                ModelState.AddModelError("", passwordProblem);
                 return View(model);
             }
-            var roleResult = await _userManager.AddToRoleAsync(user, WebConstants.RoleUser);
-            if (!roleResult.Succeeded)
+
+            const string emailTaken = "This e-mail address already has an account. Please log in, or use another e-mail address.";
+            var loginEmail = state.Contact.Email.Trim();
+            AuthSession session;
+            try
             {
-                await _userManager.DeleteAsync(user);
-                ModelState.AddModelError("", "We could not create your account. Please try again.");
+                session = await _auth.SignUpAsync(loginEmail, model.Password);
+            }
+            catch (AuthException ex) when (ex.Code == "user_already_exists")
+            {
+                // A leftover login from an earlier attempt that stopped half-way? Reuse it when the
+                // password matches and it has no application yet.
+                try { session = await _auth.SignInAsync(loginEmail, model.Password); }
+                catch (AuthException)
+                {
+                    ModelState.AddModelError("", emailTaken);
+                    return View(model);
+                }
+                if (_beneficiaries.ByUserId(session.UserId) != null)
+                {
+                    ModelState.AddModelError("", emailTaken);
+                    return View(model);
+                }
+            }
+            catch (AuthException ex)
+            {
+                _logger.LogError(ex, "Could not create the Supabase login for {Id}", state.Personal.IdNumber);
+                ModelState.AddModelError("", ex.IsRateLimited ? "Too many attempts. Please wait a few minutes and try again." : ex.Message);
                 return View(model);
             }
 
@@ -195,7 +213,7 @@ namespace PTO_Management_System.Controllers
 
                 var beneficiary = new Beneficiary
                 {
-                    UserId = user.Id,
+                    UserId = session.UserId,
                     IdNumber = p.IdNumber,
                     Title = p.Title,
                     Initials = p.Initials.Trim().ToUpper(),
@@ -244,14 +262,14 @@ namespace PTO_Management_System.Controllers
             {
                 // Undo the login so the applicant can simply try again
                 _logger.LogError(ex, "Could not save the beneficiary for {Id}", state.Personal.IdNumber);
-                await _userManager.DeleteAsync(user);
+                
                 ModelState.AddModelError("", "We could not save your application. Please try again.");
                 return View(model);
             }
 
             // 3. Wizard data is no longer needed; sign the new user in and continue with the documents
             HttpContext.Session.Remove(WebConstants.WizardSessionKey);
-            await _signInManager.SignInAsync(user, isPersistent: false);
+            await _session.SignInAsync(session, WebConstants.RoleUser, persistent: false);
             return RedirectToAction(nameof(Documents));
         }
 
@@ -294,7 +312,7 @@ namespace PTO_Management_System.Controllers
             try
             {
                 var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                var storedName = Guid.NewGuid().ToString("N") + extension;
+                var storedName = User.FindFirstValue(ClaimTypes.NameIdentifier) + "-" + Guid.NewGuid().ToString("N") + extension;
                 await _storage.SaveAsync(file, storedName);
 
                 // Replace an earlier upload of the same type
@@ -386,7 +404,7 @@ namespace PTO_Management_System.Controllers
 
         private (Beneficiary beneficiary, PtoApplication application) Current()
         {
-            var beneficiary = _beneficiaries.ByUserId(_userManager.GetUserId(User));
+            var beneficiary = _beneficiaries.ByUserId(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var application = beneficiary == null ? null : _applications.ByBeneficiaryId(beneficiary.Id);
             return (beneficiary, application);
         }

@@ -1,8 +1,8 @@
 @* Master page. Four looks, chosen by ViewData["Mode"] (see the Figma screens):
    "welcome" = logo + P.T.O + top links, "auth" = Back link only (log-in cards),
    "brand"   = myPTO | MANGAUNG header + grey footer, anything else = icon header + orange navigation tabs. *@
-@using Microsoft.AspNetCore.Identity
-@inject UserManager<IdentityUser> UserManager
+
+
 @inject PTO_Management_System.Data.PtoDbContext Db
 @{
     bool signedIn = User.Identity != null && User.Identity.IsAuthenticated;
@@ -20,7 +20,7 @@
     if (isStaff) { displayName = isAdmin ? "System Administrator" : "PTO Officer"; }
     else if (signedIn)
     {
-        var uid = UserManager.GetUserId(User);
+        var uid = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         var ben = Db.Beneficiaries.Where(x => x.UserId == uid).Select(x => new { x.FirstNames, x.Surname }).FirstOrDefault();
         displayName = ben != null ? (ben.FirstNames + " " + ben.Surname).Trim() : User.Identity.Name;
     }

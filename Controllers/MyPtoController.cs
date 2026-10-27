@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using PTO_Management_System.Interfaces;
 using PTO_Management_System.Models;
@@ -18,21 +18,21 @@ namespace PTO_Management_System.Controllers
         private readonly IPtoApplication _applications;
         private readonly INotification _notifications;
         private readonly ISite _sites;
-        private readonly UserManager<IdentityUser> _userManager;
+        
 
         public MyPtoController(IBeneficiary beneficiaries, IPtoApplication applications,
-            INotification notifications, ISite sites, UserManager<IdentityUser> userManager)
+            INotification notifications, ISite sites)
         {
             _sites = sites;
             _beneficiaries = beneficiaries;
             _applications = applications;
             _notifications = notifications;
-            _userManager = userManager;
+           
         }
 
         private Beneficiary Me()
         {
-            return _beneficiaries.ByUserId(_userManager.GetUserId(User));
+            return _beneficiaries.ByUserId(User.FindFirstValue(ClaimTypes.NameIdentifier)); 
         }
 
         // ------------------------------------------------------------ Screen 05: Home
@@ -308,19 +308,7 @@ namespace PTO_Management_System.Controllers
                 ModelState.AddModelError(nameof(model.Email), "This e-mail address belongs to another applicant.");
             if (!ModelState.IsValid) return View(model);
 
-            // Keep the login record in step with the beneficiary record
-            var user = await _userManager.GetUserAsync(User);
-            if (!string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
-            {
-                var emailResult = await _userManager.SetEmailAsync(user, email);
-                if (!emailResult.Succeeded)
-                {
-                    foreach (var e in emailResult.Errors) ModelState.AddModelError(nameof(model.Email), e.Description);
-                    return View(model);
-                }
-            }
-            await _userManager.SetPhoneNumberAsync(user, phone);
-
+          
             me.Cellphone = phone;
             me.Email = email;
             me.Address = string.IsNullOrWhiteSpace(model.Address) ? null : model.Address.Trim();

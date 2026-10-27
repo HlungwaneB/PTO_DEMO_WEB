@@ -1,49 +1,51 @@
 using System.Net.Http.Headers;
 using PTO_Management_System.Interfaces;
+using PTO_Management_System.Services;
 
 namespace PTO_Management_System.Storage
 {
     /// <summary>
-    /// Stores documents in a Supabase Storage bucket (SRS 13.1 "Supabase Storage").
-    /// Turn it on with  "Storage": { "Provider": "Supabase" }  in appsettings.json.
-    /// Key used: Supabase:ServiceRoleKey (keep it in user-secrets, never in GitHub) when present,
-    /// otherwise the publishable key - which only works if you ran the storage policies in
-    /// Database/supabase_setup.sql (prototype only).
+    /// Stores documents in the private Supabase Storage bucket as the signed-in person
+    /// (their own access token + the publishable key). No service-role key is used; the bucket
+    /// policies decide who may save and read which file.
     /// </summary>
     public class SupabaseFileStorage : IFileStorage
     {
         private readonly HttpClient _http;
+        private readonly SessionService _session;
         private readonly string _baseUrl;
         private readonly string _bucket;
-        private readonly string _key;
+        private readonly string _apiKey;
 
-        public SupabaseFileStorage(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public SupabaseFileStorage(IHttpClientFactory httpClientFactory, IConfiguration configuration, SessionService session)
         {
             _http = httpClientFactory.CreateClient();
+            _session = session;
             _baseUrl = (configuration["Supabase:Url"] ?? "").TrimEnd('/');
             _bucket = configuration["Supabase:Bucket"] ?? "pto-documents";
-
-            var serviceKey = configuration["Supabase:ServiceRoleKey"];
-            _key = string.IsNullOrWhiteSpace(serviceKey) ? configuration["Supabase:PublishableKey"] : serviceKey;
+            _apiKey = configuration["Supabase:PublishableKey"] ?? "";
         }
 
-        private HttpRequestMessage NewRequest(HttpMethod method, string storedFileName)
+        private async Task<HttpRequestMessage> NewRequestAsync(HttpMethod method, string storedFileName)
         {
+            var token = await _session.GetAccessTokenAsync();
+            if (string.IsNullOrEmpty(token))
+                throw new InvalidOperationException("Your login has expired. Please log out and log in again.");
+
             var url = _baseUrl + "/storage/v1/object/" + _bucket + "/" + Uri.EscapeDataString(Path.GetFileName(storedFileName));
             var request = new HttpRequestMessage(method, url);
-            request.Headers.Add("apikey", _key);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _key);
+            request.Headers.Add("apikey", _apiKey);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             return request;
         }
 
         public async Task SaveAsync(IFormFile file, string storedFileName)
         {
             using (var stream = file.OpenReadStream())
-            using (var request = NewRequest(HttpMethod.Post, storedFileName))
+            using (var request = await NewRequestAsync(HttpMethod.Post, storedFileName))
             {
                 request.Content = new StreamContent(stream);
                 request.Content.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType ?? "application/octet-stream");
-                request.Headers.Add("x-upsert", "true");
 
                 var response = await _http.SendAsync(request);
                 if (!response.IsSuccessStatusCode)
@@ -56,7 +58,7 @@ namespace PTO_Management_System.Storage
 
         public async Task<Stream> OpenReadAsync(string storedFileName)
         {
-            using (var request = NewRequest(HttpMethod.Get, storedFileName))
+            using (var request = await NewRequestAsync(HttpMethod.Get, storedFileName))
             {
                 var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
                 if (!response.IsSuccessStatusCode) return null;
@@ -66,7 +68,7 @@ namespace PTO_Management_System.Storage
 
         public async Task DeleteAsync(string storedFileName)
         {
-            using (var request = NewRequest(HttpMethod.Delete, storedFileName))
+            using (var request = await NewRequestAsync(HttpMethod.Delete, storedFileName))
             {
                 await _http.SendAsync(request);
             }

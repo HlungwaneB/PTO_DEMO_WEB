@@ -1,36 +1,39 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using PTO_Management_System.Interfaces;
 using PTO_Management_System.Models;
+using PTO_Management_System.Services;
 
 namespace PTO_Management_System.Controllers
 {
     /// <summary>
-    /// Screens 02 Log in, 04 Administrator log in, 06 Search for your PTO, 08 Application not found.
-    /// Beneficiaries log in with their ID NUMBER (their reference) and the password they created
-    /// during the application. Staff log in with their e-mail address.
+    /// Screens 02 Log in, 04 Administrator log in, 06 Search for your PTO, 08 Application not found,
+    /// plus Forgot password. Every login is a Supabase Auth login (the same as the Flutter app).
+    /// Beneficiaries log in with their ID number (or e-mail) and password; the administrator with an e-mail.
     /// </summary>
     public class AccountController : Controller
     {
         private const string GenericError = "Incorrect ID number or password.";
+        private const string StaffError = "Incorrect e-mail address or password.";
+        private const string WrongCode = "That code is not correct or has expired. Go back and request a new code.";
 
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly ISupabaseAuth _auth;
+        private readonly SessionService _session;
+        private readonly IProfile _profiles;
         private readonly IBeneficiary _beneficiaries;
         private readonly IPtoApplication _applications;
         private readonly IAuditLog _audit;
         private readonly IEmailSender _email;
         private readonly IMemoryCache _cache;
         private readonly ILogger<AccountController> _logger;
-        private const string ResetPurpose = "PasswordResetCode";
-        public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager,
+
+        public AccountController(ISupabaseAuth auth, SessionService session, IProfile profiles,
             IBeneficiary beneficiaries, IPtoApplication applications, IAuditLog audit,
             IEmailSender email, IMemoryCache cache, ILogger<AccountController> logger)
         {
-            _signInManager = signInManager;
-            _userManager = userManager;
+            _auth = auth;
+            _session = session;
+            _profiles = profiles;
             _beneficiaries = beneficiaries;
             _applications = applications;
             _audit = audit;
@@ -101,7 +104,7 @@ namespace PTO_Management_System.Controllers
         [HttpGet]
         public async Task<IActionResult> SignOutNow()
         {
-            await _signInManager.SignOutAsync();
+            await _session.SignOutAsync();
             HttpContext.Session.Clear();
             return RedirectToAction("Index", "Home");
         }
@@ -110,7 +113,7 @@ namespace PTO_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            await _signInManager.SignOutAsync();
+            await _session.SignOutAsync();
             HttpContext.Session.Clear();
             return RedirectToAction("Index", "Home");
         }
@@ -152,166 +155,151 @@ namespace PTO_Management_System.Controllers
 
             return RedirectToAction("Application", "MyPto");
         }
-        // ------------------------------------------------------------ Forgot password (e-mail code)
 
-[HttpGet]
-public IActionResult ForgotPassword()
-{
-    return View(new ForgotPasswordViewModel());
-}
+        // ------------------------------------------------------------ Forgot password (code sent by Supabase)
 
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
-{
-    if (!ModelState.IsValid) return View(model);
-
-    if (!_email.IsEnabled)
-    {
-        ModelState.AddModelError("", "E-mail is not available right now. Please contact the municipality.");
-        return View(model);
-    }
-
-    var identifier = model.Identifier.Trim();
-    var user = await FindUserForReset(identifier);
-
-    // One code per minute per account, and only if an e-mail address is on file
-    if (user != null && !string.IsNullOrWhiteSpace(user.Email) && !_cache.TryGetValue("fp:" + user.Id, out _))
-    {
-        try
+        [HttpGet]
+        public IActionResult ForgotPassword()
         {
-            var code = await _userManager.GenerateUserTokenAsync(user, TokenOptions.DefaultEmailProvider, ResetPurpose);
-            var name = _beneficiaries.ByUserId(user.Id)?.FullName ?? "";
-            await _email.SendCodeAsync(user.Email, name, code);
-            _cache.Set("fp:" + user.Id, true, TimeSpan.FromSeconds(60));
+            return View(new ForgotPasswordViewModel());
         }
-        catch (Exception ex)
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
-            _logger.LogError(ex, "Could not send the password reset code.");
+            if (!ModelState.IsValid) return View(model);
+
+            var email = await ResolveEmail(model.Identifier);
+
+            // One code per minute per e-mail address
+            if (!string.IsNullOrEmpty(email) && !_cache.TryGetValue("fp:" + email.ToLowerInvariant(), out _))
+            {
+                try
+                {
+                    await _auth.SendRecoveryCodeAsync(email);
+                    _cache.Set("fp:" + email.ToLowerInvariant(), true, TimeSpan.FromSeconds(60));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Could not request the password reset code.");
+                }
+            }
+
+            // Same answer whether or not the account exists
+            HttpContext.Session.SetString("ResetEmail", email ?? "unknown");
+            return RedirectToAction("ResetPassword");
         }
-    }
 
-    // Same answer whether or not the account exists
-    HttpContext.Session.SetString("ResetIdentifier", identifier);
-    return RedirectToAction("ResetPassword");
-}
+        [HttpGet]
+        public IActionResult ResetPassword()
+        {
+            var email = HttpContext.Session.GetString("ResetEmail");
+            if (string.IsNullOrEmpty(email)) return RedirectToAction("ForgotPassword");
+            return View(new ResetPasswordViewModel { Identifier = email });
+        }
 
-[HttpGet]
-public IActionResult ResetPassword()
-{
-    var identifier = HttpContext.Session.GetString("ResetIdentifier");
-    if (string.IsNullOrEmpty(identifier)) return RedirectToAction("ForgotPassword");
-    return View(new ResetPasswordViewModel { Identifier = identifier });
-}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            // The account comes from the session, not from the form, so it cannot be changed by the user
+            var email = HttpContext.Session.GetString("ResetEmail");
+            if (string.IsNullOrEmpty(email)) return RedirectToAction("ForgotPassword");
+            model.Identifier = email;
 
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
-{
-    // The account comes from the session, not from the form, so it cannot be changed by the user
-    var identifier = HttpContext.Session.GetString("ResetIdentifier");
-    if (string.IsNullOrEmpty(identifier)) return RedirectToAction("ForgotPassword");
-    model.Identifier = identifier;
+            if (!ModelState.IsValid)
+            {
+                model.Password = null; model.ConfirmPassword = null;
+                return View(model);
+            }
 
-    if (!ModelState.IsValid)
-    {
-        model.Password = null; model.ConfirmPassword = null;
-        return View(model);
-    }
+            // Check the password BEFORE the code is used up (a code works only once)
+            var rule = PasswordRules.Check(model.Password);
+            if (rule != null)
+            {
+                ModelState.AddModelError("", rule);
+                model.Password = null; model.ConfirmPassword = null;
+                return View(model);
+            }
 
-    const string wrong = "That code is not correct or has expired. Go back and request a new code.";
-    var user = await FindUserForReset(identifier);
-    if (user == null)
-    {
-        ModelState.AddModelError("", wrong);
-        return View(model);
-    }
+            AuthSession recovery;
+            try
+            {
+                recovery = await _auth.VerifyRecoveryCodeAsync(email, model.Code);
+            }
+            catch (AuthException ex)
+            {
+                _logger.LogWarning("Reset code rejected: {Code}", ex.Code);
+                ModelState.AddModelError("", ex.IsRateLimited ? "Too many attempts. Please wait a few minutes and try again." : WrongCode);
+                model.Password = null; model.ConfirmPassword = null;
+                return View(model);
+            }
 
-    if (await _userManager.IsLockedOutAsync(user))
-    {
-        ModelState.AddModelError("", "Too many failed attempts. Please try again in 10 minutes.");
-        return View(model);
-    }
+            try
+            {
+                await _auth.UpdatePasswordAsync(recovery.AccessToken, model.Password);
+            }
+            catch (AuthException ex)
+            {
+                ModelState.AddModelError("", ex.Message + " Please request a new code.");
+                model.Password = null; model.ConfirmPassword = null;
+                return View(model);
+            }
 
-    bool valid = await _userManager.VerifyUserTokenAsync(user, TokenOptions.DefaultEmailProvider, ResetPurpose, model.Code);
-    if (!valid)
-    {
-        await _userManager.AccessFailedAsync(user); // counts towards the 5-attempt lockout
-        ModelState.AddModelError("", wrong);
-        model.Password = null; model.ConfirmPassword = null;
-        return View(model);
-    }
+            HttpContext.Session.Remove("ResetEmail");
+            _audit.Log("Beneficiary", "Password reset with e-mail code", email);
 
-    var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-    var result = await _userManager.ResetPasswordAsync(user, resetToken, model.Password);
-    if (!result.Succeeded)
-    {
-        foreach (var error in result.Errors) ModelState.AddModelError("", error.Description);
-        model.Password = null; model.ConfirmPassword = null;
-        return View(model); // the code is still valid, so they can choose a stronger password
-    }
+            try
+            {
+                var name = _beneficiaries.ByUserId(recovery.UserId)?.FullName ?? "";
+                await _email.SendAsync(email, name, "myPTO: your password was changed", "Your password was changed",
+                    "The password for your myPTO account was just changed. If this was not you, contact the Mangaung municipality immediately.");
+            }
+            catch (Exception ex) { _logger.LogError(ex, "Could not send the password-changed e-mail."); }
 
-    await _userManager.ResetAccessFailedCountAsync(user);
-    HttpContext.Session.Remove("ResetIdentifier");
-    _audit.Log("Beneficiary", "Password reset with e-mail code", identifier);
+            TempData["Message"] = "Your password was changed. Log in with your new password.";
+            bool staff = _profiles.RoleFor(recovery.UserId) == WebConstants.RoleAdmin;
+            return RedirectToAction(staff ? "AdminLogin" : "Login");
+        }
 
-    try
-    {
-        var name = _beneficiaries.ByUserId(user.Id)?.FullName ?? "";
-        await _email.SendAsync(user.Email, name, "myPTO: your password was changed", "Your password was changed",
-            "The password for your myPTO account was just changed. If this was not you, contact the Mangaung municipality immediately.");
-    }
-    catch (Exception ex) { _logger.LogError(ex, "Could not send the password-changed e-mail."); }
+        // ------------------------------------------------------------ helpers
 
-    TempData["Message"] = "Your password was changed. Log in with your new password.";
-    bool staff = await _userManager.IsInRoleAsync(user, WebConstants.RoleAdmin)
-              || await _userManager.IsInRoleAsync(user, WebConstants.RoleOfficer);
-    return RedirectToAction(staff ? "AdminLogin" : "Login");
-}
-
-private async Task<IdentityUser> FindUserForReset(string identifier)
-{
-    identifier = (identifier ?? "").Trim();
-    var beneficiary = _beneficiaries.ByLoginIdentifier(identifier);
-    if (beneficiary != null) return await _userManager.FindByIdAsync(beneficiary.UserId);
-    if (identifier.Contains("@")) return await _userManager.FindByEmailAsync(identifier);
-    return null;
-}
-        // ------------------------------------------------------------ helper
+        /// <summary>An ID number is turned into the e-mail the account was created with; an e-mail is used as typed.</summary>
+        private async Task<string> ResolveEmail(string identifier)
+        {
+            identifier = (identifier ?? "").Trim();
+            if (identifier.Length == 0) return null;
+            if (identifier.Contains("@")) return identifier;
+            try { return await _auth.EmailForIdNumberAsync(identifier); }
+            catch (Exception ex) { _logger.LogError(ex, "ID number lookup failed."); return null; }
+        }
 
         /// <summary>Returns null when the user is signed in, otherwise the message to show.</summary>
         private async Task<string> TrySignIn(LoginViewModel model, bool staff)
         {
-            var identifier = (model.Identifier ?? "").Trim();
-            IdentityUser user = null;
+            var email = await ResolveEmail(model.Identifier);
+            if (string.IsNullOrEmpty(email)) return staff ? StaffError : GenericError;
 
-            if (staff)
+            AuthSession session;
+            try
             {
-                user = await _userManager.FindByEmailAsync(identifier);
-                if (user != null && !(await _userManager.IsInRoleAsync(user, WebConstants.RoleAdmin)))
-                    user = null; // only the administrator can use this page
+                session = await _auth.SignInAsync(email, model.Password);
             }
-            else
+            catch (AuthException ex)
             {
-                var beneficiary = _beneficiaries.ByLoginIdentifier(identifier);
-                if (beneficiary != null)
-                {
-                    user = await _userManager.FindByIdAsync(beneficiary.UserId);
-                }
-                else if (identifier.Contains("@"))
-                {
-                    var staffUser = await _userManager.FindByEmailAsync(identifier);
-                    if (staffUser != null && await _userManager.IsInRoleAsync(staffUser, WebConstants.RoleAdmin))
-                        return "Administrators must use the Administrator log in page.";
-                }
+                if (ex.IsRateLimited) return "Too many attempts. Please wait a few minutes and try again.";
+                if (ex.Code == "invalid_credentials" || ex.Status == 400) return staff ? StaffError : GenericError;
+                _logger.LogError(ex, "Supabase login failed.");
+                return "We could not log you in right now. Please try again.";
             }
 
-            if (user == null) return staff ? "Incorrect e-mail address or password." : GenericError;
+            var role = _profiles.RoleFor(session.UserId);
+            if (staff && role != WebConstants.RoleAdmin) return StaffError;   // beneficiaries cannot use the administrator page
+            if (!staff && role == WebConstants.RoleAdmin) return "Administrators must use the Administrator log in page.";
 
-            var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: true);
-            if (result.Succeeded) return null;
-            if (result.IsLockedOut) return "Too many failed attempts. Please try again in 10 minutes.";
-            return staff ? "Incorrect e-mail address or password." : GenericError;
+            await _session.SignInAsync(session, role, model.RememberMe);
+            return null;
         }
     }
 }
