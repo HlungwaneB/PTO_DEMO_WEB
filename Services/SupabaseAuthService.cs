@@ -42,9 +42,14 @@ namespace PTO_Management_System.Services
             _apiKey = configuration["Supabase:PublishableKey"] ?? "";
         }
 
-        public Task<AuthSession> SignUpAsync(string email, string password)
-            => GetSession(HttpMethod.Post, "/auth/v1/signup", new { email, password }, null);
-
+        public Task<AuthSession> SignUpAsync(string email, string password, string fullName = null)
+        {
+            // full_name is stored as user metadata so the e-mail templates can say {{ .Data.full_name }}
+            object body = string.IsNullOrWhiteSpace(fullName)
+                ? new { email, password }
+                : (object)new { email, password, data = new { full_name = fullName.Trim() } };
+            return GetSession(HttpMethod.Post, "/auth/v1/signup", body, null);
+        }
         public Task<AuthSession> SignInAsync(string email, string password)
             => GetSession(HttpMethod.Post, "/auth/v1/token?grant_type=password", new { email, password }, null);
 

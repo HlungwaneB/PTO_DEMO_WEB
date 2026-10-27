@@ -179,7 +179,8 @@ namespace PTO_Management_System.Controllers
             AuthSession session;
             try
             {
-                session = await _auth.SignUpAsync(loginEmail, model.Password);
+                session = await _auth.SignUpAsync(loginEmail, model.Password,
+                (state.Personal.FirstNames + " " + state.Personal.Surname).Trim());
             }
             catch (AuthException ex) when (ex.Code == "user_already_exists")
             {
